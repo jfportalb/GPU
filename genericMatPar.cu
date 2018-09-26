@@ -111,7 +111,12 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 	//dimensao das matrizes e tamanho dos blocos
-	cin >> mA >> nA >> mB >> nB >> blockLines >> blockColumns;
+	mA = atol(argv[1]);
+	nA = atol(argv[2]);
+	mB = atol(argv[3]);
+	nB = atol(argv[4]);
+	blockLines = atol(argv[5]);
+	blockColumns = atol(argv[6]);
 
 	if (nA != mB) {
 		cerr << "Impossível executar multiplicação das matrizes. Número de colunas da matriz A ("<< nA <<")não bate com o número de colunas da matriz B ("<< mB <<")" << endl;
