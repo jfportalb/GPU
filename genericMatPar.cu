@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
 	blockColumns = atol(argv[6]);
 
 	if (nA != mB) {
-		cerr << "Impossível executar multiplicação das matrizes. Número de colunas da matriz A ("<< nA <<")não bate com o número de colunas da matriz B ("<< mB <<")" << endl;
+		cerr << "Impossível executar multiplicação das matrizes. Número de colunas da matriz A ("<< nA <<") não bate com o número de colunas da matriz B ("<< mB <<")" << endl;
 		exit(EXIT_FAILURE);
 	}
 
