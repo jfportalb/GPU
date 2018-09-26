@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 	CUDA_SAFE_CALL(cudaEventCreate(&start));
 	CUDA_SAFE_CALL(cudaEventCreate(&stop));
 	CUDA_SAFE_CALL(cudaEventRecord(start));
-	multMatPar<<<blocosGrade, threadsBloco, tamMemCompartilhada>>>(d_a, d_b, d_c, mA, nB);
+	//multMatPar<<<blocosGrade, threadsBloco, tamMemCompartilhada>>>(d_a, d_b, d_c, mA, nB);
 	CUDA_SAFE_CALL(cudaGetLastError());
 	CUDA_SAFE_CALL(cudaEventRecord(stop));
 	CUDA_SAFE_CALL(cudaEventSynchronize(stop));
