@@ -77,7 +77,7 @@ int preencheMatriz(float **mat, int linhas, int colunas) {
 /**
  * Imprime os resultados do programa
  */
-void printResults(int mA, int nA, int mB, int nB, int blockLines, int blockColumns, double delta_eventos, double initialParTime, double finalParTime, bool csv = true){
+void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned int nB, unsigned int blockLines, unsigned int blockColumns, double delta_eventos, double initialParTime, double finalParTime, bool csv = true){
 	if (csv) {
 		cout << mA << ";" << nA << ";" << mB << ";" << nB << ";" << blockLines << ";" << blockColumns << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << ";" << endl;
 	} else {
@@ -99,11 +99,11 @@ int main(int argc, char** argv) {
 	double begin, end, initialParTime, finalParTime;
 	cudaEvent_t start, stop;
 	//entrada de dados
-	int mA, nA, mB, nB; // Dimensão das matrizes de entrada
+	unsigned int mA, nA, mB, nB; // Dimensão das matrizes de entrada
 	long int bytesA, bytesB, bytesC; //qtde bytes por matriz
 	
 	//tamanho dos blocos de threads
-	int blockLines, blockColumns;
+	unsigned int blockLines, blockColumns;
 
 	//le e valida os parametros de entrada
 	if(argc < 7) {
