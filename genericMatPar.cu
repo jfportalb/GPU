@@ -44,9 +44,9 @@ __global__ void multMatPar(float *a, float *b, float *c, int mA, int nAmB, int n
 	float* Bsub= (float*) &Asub[blockDim.x*blockDim.y];
 	float valor = 0;
 	for(int passo=0; passo<nAmB; passo+=blockDim.y) {
-		if (i < mA && (passo+j_bloco) < nA)
+		if (i < mA && (passo+j_bloco) < nAmB)
 			Asub[i_bloco*blockDim.y+j_bloco] = a[i*nAmB+passo+j_bloco];
-		if ((passo+i_bloco) < mB && j < nB)
+		if ((passo+i_bloco) < nAmB && j < nB)
 			Bsub[i_bloco*blockDim.y+j_bloco] = b[(passo+i_bloco)*nAmB+j];
 		__syncthreads();
 		if (i < mA && j < nB)
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 
 	// Invoca o kernel com blocos de tamanhos fixos
 	dim3 threadsBloco = {blockLines, blockColumns, 1};
-	//dim3 blocosGrade = {n/threadsBloco.x, n/threadsBloco.y, 1};
+	dim3 blocosGrade = {n/threadsBloco.x, n/threadsBloco.y, 1};
 	int tamMemCompartilhada = blockLines*blockColumns*4*2;
 	GET_TIME(end);
 	initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
