@@ -30,7 +30,7 @@ using namespace std;
 /**
  * Kernel para execucao paralela em CUDA
  */
-__global__ void multMatPar(float *a, float *b, float *c, int n) {
+__global__ void multMatPar(float *a, float *b, float *c, int mA, int nAmB, int nB) {
 	// Coordenadas globais da thread
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -43,16 +43,20 @@ __global__ void multMatPar(float *a, float *b, float *c, int n) {
 	// Memória compartilhada para a submatriz de B
 	float* Bsub= (float*) &Asub[blockDim.x*blockDim.y];
 	float valor = 0;
-	for(int passo=0; passo<n; passo+=blockDim.y) {
-		Asub[i_bloco*blockDim.y+j_bloco] = a[i*n+passo+j_bloco];
-		Bsub[i_bloco*blockDim.y+j_bloco] = b[(passo+i_bloco)*n+j];
+	for(int passo=0; passo<nAmB; passo+=blockDim.y) {
+		if (i < mA && (passo+j_bloco) < nA)
+			Asub[i_bloco*blockDim.y+j_bloco] = a[i*nAmB+passo+j_bloco];
+		if ((passo+i_bloco) < mB && j < nB)
+			Bsub[i_bloco*blockDim.y+j_bloco] = b[(passo+i_bloco)*nAmB+j];
 		__syncthreads();
-		for (int k = 0; k < blockDim.y; k++) {
-			valor += Asub[i_bloco*blockDim.y+k] *	Bsub[k*blockDim.y+j_bloco];
-		}
+		if (i < mA && j < nB)
+			for (int k = 0; k < blockDim.y; k++) {
+				valor += Asub[i_bloco*blockDim.y+k] *	Bsub[k*blockDim.y+j_bloco];
+			}
 		__syncthreads();
 	}
-	c[i*n+j] = valor;
+	if (i < mA && j < nB)
+		c[i*nB+j] = valor;
 }
 
 /**
@@ -167,7 +171,7 @@ int main(int argc, char** argv) {
 	CUDA_SAFE_CALL(cudaEventCreate(&start));
 	CUDA_SAFE_CALL(cudaEventCreate(&stop));
 	CUDA_SAFE_CALL(cudaEventRecord(start));
-	//multMatPar<<<blocosGrade, threadsBloco, tamMemCompartilhada>>>(d_a, d_b, d_c, mA, nB);
+	multMatPar<<<blocosGrade, threadsBloco, tamMemCompartilhada>>>(d_a, d_b, d_c, mA, nA, nB);
 	CUDA_SAFE_CALL(cudaGetLastError());
 	CUDA_SAFE_CALL(cudaEventRecord(stop));
 	CUDA_SAFE_CALL(cudaEventSynchronize(stop));
