@@ -70,7 +70,7 @@ __global__ void multMatPar(double *a, double *b, double *c, int mA, int nAmB, in
 		__syncthreads();
 		if (i < mA && j < nB)
 			for (int k = 0; k < blockDim.y; k++) {
-				valor += Asub[i_bloco*blockDim.y+k] *	Bsub[k*blockDim.y+j_bloco];
+				valor += Asub[i_bloco*blockDim.y+k] * Bsub[k*blockDim.y+j_bloco];
 			}
 		__syncthreads();
 	}
@@ -101,7 +101,7 @@ void checkResults(double *mat1, double *mat2, int m, int n){
 	for (int i=0; i<m; i++) {
 		for (int j=0; j<n; j++) {
 			if (fabs(mat1[i*n+j] - mat2[i*n+j]) > 1e-5) {
-				cerr << "Resultado incorreto em " << i << " x " << j <<endl;
+				cerr << "Resultado incorreto em " << i << " x " << j << " -> " << mat1[i*n+j] << " " <<  mat2[i*n+j] << endl;
 				exit(EXIT_FAILURE);
 			}
 		}
