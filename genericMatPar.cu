@@ -29,9 +29,9 @@ using namespace std;
 /**
  * Funcao para execucao sequencial
  */
-void multMatSeq(float *a, float *b, float *c, int mA, int nAmB, int nB) {
+void multMatSeq(double *a, double *b, double *c, int mA, int nAmB, int nB) {
    int i, j, k;
-   float soma;
+   double soma;
    for(i=0; i<mA; i++)
       for(j=0; j<nB; j++) {
          soma = 0;
@@ -45,19 +45,19 @@ void multMatSeq(float *a, float *b, float *c, int mA, int nAmB, int nB) {
 /**
  * Kernel para execucao paralela em CUDA
  */
-__global__ void multMatPar(float *a, float *b, float *c, int mA, int nAmB, int nB) {
+__global__ void multMatPar(double *a, double *b, double *c, int mA, int nAmB, int nB) {
 	// Coordenadas globais da thread
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	// Coordenadas locais da thread
 	int i_bloco = threadIdx.x;
 	int j_bloco = threadIdx.y;
-	extern __shared__ float mat_sub[];
+	extern __shared__ double mat_sub[];
 	// Memória compartilhada para a submatriz de A
-	float* Asub = (float*) mat_sub;
+	double* Asub = (double*) mat_sub;
 	// Memória compartilhada para a submatriz de B
-	float* Bsub= (float*) &Asub[blockDim.x*blockDim.y];
-	float valor = 0;
+	double* Bsub= (double*) &Asub[blockDim.x*blockDim.y];
+	double valor = 0;
 	for(int passo=0; passo<nAmB; passo+=blockDim.y) {
 		if (i < mA && (passo+j_bloco) < nAmB)
 			Asub[i_bloco*blockDim.y+j_bloco] = a[i*nAmB+passo+j_bloco];
@@ -83,10 +83,10 @@ __global__ void multMatPar(float *a, float *b, float *c, int mA, int nAmB, int n
  * Entrada: matriz de entrada, dimensoes da matriz
  * Saída: retorna 1 se a matriz foi preenchida com sucesso e 0 caso contrario
  */
-int preencheMatriz(float **mat, int linhas, int colunas) {
+int preencheMatriz(double **mat, int linhas, int colunas) {
 	int i, j;
 	//aloca espaco de memoria para a matriz
-	*mat = (float*) malloc(sizeof(float) * linhas * colunas);
+	*mat = (double*) malloc(sizeof(double) * linhas * colunas);
 	if (mat == NULL) return 0;
 	//preenche o vetor
 	for (i=0; i<linhas; i++) {
@@ -97,7 +97,7 @@ int preencheMatriz(float **mat, int linhas, int colunas) {
 	return 1;
 }
 
-void checkResults(float *mat1, float *mat2, int m, int n){
+void checkResults(double *mat1, double *mat2, int m, int n){
 	for (int i=0; i<m; i++) {
 		for (int j=0; j<n; j++) {
 			if (fabs(mat1[i*n+j] - mat2[i*n+j]) > 1e-5) {
@@ -128,8 +128,8 @@ void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned in
 
 //funcao principal
 int main(int argc, char** argv) {
-	float *h_a, *h_b, *h_c, *h_c_seq; //matrizes host
-	float *d_a, *d_b, *d_c; //matrizes device
+	double *h_a, *h_b, *h_c, *h_c_seq; //matrizes host
+	double *d_a, *d_b, *d_c; //matrizes device
 	//para medidas de tempo
 	double begin, end, initialParTime, finalParTime, tempoSeq;
 	cudaEvent_t start, stop;
@@ -159,9 +159,9 @@ int main(int argc, char** argv) {
 	}
 
 	//calcula o tamanho em bytes das matrizes
-	bytesA = mA*nA*sizeof(float);
-	bytesB = mB*nB*sizeof(float);
-	bytesC = mA*nB*sizeof(float);
+	bytesA = mA*nA*sizeof(double);
+	bytesB = mB*nB*sizeof(double);
+	bytesC = mA*nB*sizeof(double);
 
 	// Aloca e preenche a matriz de entrada A
 	if (preencheMatriz(&h_a, mA, nA) == 0) {
@@ -174,13 +174,13 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 	// Aloca a matriz de saída paralelo
-	h_c = (float*) malloc(bytesC);
+	h_c = (double*) malloc(bytesC);
 	if (h_c == NULL) {
 		cerr << "Erro de alocacao da matriz de saida" << endl;
 		exit(EXIT_FAILURE);
 	}
 	// Aloca a matriz de saída sequencial
-	h_c_seq = (float*) malloc(bytesC);
+	h_c_seq = (double*) malloc(bytesC);
 	if (h_c_seq == NULL) {
 		cerr << "Erro de alocacao da matriz de saida" << endl;
 		exit(EXIT_FAILURE);
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
 	CUDA_SAFE_CALL(cudaGetLastError());
 	CUDA_SAFE_CALL(cudaEventRecord(stop));
 	CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-	float delta_eventos = 0;
+	double delta_eventos = 0;
 	CUDA_SAFE_CALL(cudaEventElapsedTime(&delta_eventos, start, stop));
 
 	//copia resultado da GPU para a CPU (device para host)
