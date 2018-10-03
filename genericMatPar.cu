@@ -169,19 +169,25 @@ int main(int argc, char** argv) {
 		cerr << "Erro de preenchimento da matriz de entrada B" << endl;
 		exit(EXIT_FAILURE);
 	}
-	// Aloca a matriz de saída
+	// Aloca a matriz de saída paralelo
 	h_c = (float*) malloc(bytesC);
 	if (h_c == NULL) {
 		cerr << "Erro de alocacao da matriz de saida" << endl;
 		exit(EXIT_FAILURE);
 	}
+	// Aloca a matriz de saída sequencial
+	h_c_seq = (float*) malloc(bytesC);
+	if (h_c_seq == NULL) {
+		cerr << "Erro de alocacao da matriz de saida" << endl;
+		exit(EXIT_FAILURE);
+	}
 	
 	//!!! ------------------------ executa sequencial ---------------------------------- !!!//
-	GET_TIME(inicio);
-	multMatSeq(h_a, h_b, h_c, n);
-	GET_TIME(fim);
+	GET_TIME(begin);
+	multMatSeq(h_a, h_b, h_c_seq, ma, nA, nB);
+	GET_TIME(end);
 
-	tempoSeq = fim-inicio; // calcula o tempo sequencial em segundos
+	tempoSeq = end-begin; // calcula o tempo sequencial em segundos
 	
 	//!!! ------------------------ executa em paralelo em CUDA -------------------------- !!!//
 	GET_TIME(begin);
