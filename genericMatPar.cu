@@ -224,6 +224,8 @@ int main(int argc, char** argv) {
 	GET_TIME(end);
 	finalParTime = end-begin; // calcula o tempo das finalizacoes paralelo em segundos
 	
+	checkResults(h_c_seq, h_c, mA, nB);
+
 	// Libera a memória na GPU
 	CUDA_SAFE_CALL(cudaFree(d_a));
 	CUDA_SAFE_CALL(cudaFree(d_b));
