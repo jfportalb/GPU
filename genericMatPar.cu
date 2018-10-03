@@ -110,8 +110,8 @@ int main(int argc, char** argv) {
 	unsigned int blockLines, blockColumns;
 
 	//le e valida os parametros de entrada
-	if(argc < 7) {
-		cerr << "Digite: "<< argv[0] <<" <nº de linhas da matriz A> <nº de colunas da matriz A> <nº de linhas da matriz B> <nº de colunas da matriz B> <nº de linhas dos blocos> <nº de colunas dos blocos>." << endl;
+	if(argc < 6) {
+		cerr << "Digite: "<< argv[0] <<" <nº de linhas da matriz A> <nº de colunas da matriz A> <nº de linhas da matriz B> <nº de colunas da matriz B> <nº de linhas e colunas dos blocos>" << endl;
 		exit(EXIT_FAILURE);
 	}
 	//dimensao das matrizes e tamanho dos blocos
@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
 	mB = atol(argv[3]);
 	nB = atol(argv[4]);
 	blockLines = atol(argv[5]);
-	blockColumns = atol(argv[6]);
+	blockColumns = atol(argv[5]);
 
 	if (nA != mB) {
 		cerr << "Impossível executar multiplicação das matrizes. Número de colunas da matriz A ("<< nA <<") não bate com o número de colunas da matriz B ("<< mB <<")" << endl;
