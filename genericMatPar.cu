@@ -97,7 +97,7 @@ void checkResults(float *mat1, float *mat2, int m, int n){
 	for (int i=0; i<m; i++) {
 		for (int j=0; j<n; j++) {
 			if (fabs(mat1[i*n+j] - mat2[i*n+j]) > 1e-5) {
-				fprintf(stderr, "resultado incorreto\n");
+				cerr << "Resultado incorreto em " << i << " x " << j <<endl;
 				exit(EXIT_FAILURE);
 			}
 		}
