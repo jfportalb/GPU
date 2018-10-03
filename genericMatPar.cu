@@ -26,6 +26,21 @@ using namespace std;
 		fprintf(stderr,"Erro no arquivo '%s', linha %i: %s.\n",__FILE__, __LINE__,cudaGetErrorString(err)); \
 		exit(EXIT_FAILURE); } \
 } 
+/**
+ * Funcao para execucao sequencial
+ */
+void multMatSeq(float *a, float *b, float *c, int mA, int nAmB, int nB) {
+   int i, j, k;
+   float soma;
+   for(i=0; i<mA; i++)
+      for(j=0; j<nB; j++) {
+         soma = 0;
+         for(k=0; k<nAmB; k++) {
+            soma += a[i*nAmB+k] * b[k*nB+j];
+         }
+         c[i*n+j] = soma;
+      }
+}
 
 /**
  * Kernel para execucao paralela em CUDA
@@ -78,16 +93,28 @@ int preencheMatriz(float **mat, int linhas, int colunas) {
 	return 1;
 }
 
+void checkResults(float *mat1, float *mat2, int m, int n){
+	for (int i=0; i<m; i++) {
+		for (int j=0; j<n; j++) {
+			if (fabs(mat1[i*n+j] - mat2[i*n+j]) > 1e-5) {
+				fprintf(stderr, "resultado incorreto\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+}
+
 /**
  * Imprime os resultados do programa
  */
-void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned int nB, unsigned int blockLines, unsigned int blockColumns, double delta_eventos, double initialParTime, double finalParTime, bool csv = true){
+void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned int nB, unsigned int blockLines, unsigned int blockColumns, double tempo_seq, double delta_eventos, double initialParTime, double finalParTime, bool csv = true){
 	if (csv) {
-		cout << mA << ";" << nA << ";" << mB << ";" << nB << ";" << blockLines << ";" << blockColumns << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << ";" << endl;
+		cout << mA << ";" << nA << ";" << mB << ";" << nB << ";" << blockLines << ";" << blockColumns << ";" << tempo_seq << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << ";" << endl;
 	} else {
 		cout << "Dimensões da matriz A = " << mA << " x " << nA << endl
 			 << "Dimensões da matriz B = " << mB << " x " << nB << endl
 			 << "Dimensões dos blocos = " << blockLines << " x " << blockColumns << endl
+			 << "Tempo sequencial = "<< tempoSeq <<" seg" << endl
 			 << "Tempo paralelo kernel = "<< delta_eventos/1000 << " seg" << endl
 			 << "Tempo paralelo begin = "<< initialParTime <<" seg" << endl
 			 << "Tempo paralelo end    = "<< finalParTime <<" seg" << endl
@@ -97,10 +124,10 @@ void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned in
 
 //funcao principal
 int main(int argc, char** argv) {
-	float *h_a, *h_b, *h_c; //matrizes host
+	float *h_a, *h_b, *h_c, *h_c_seq; //matrizes host
 	float *d_a, *d_b, *d_c; //matrizes device
 	//para medidas de tempo
-	double begin, end, initialParTime, finalParTime;
+	double begin, end, initialParTime, finalParTime, tempo_seq;
 	cudaEvent_t start, stop;
 	//entrada de dados
 	unsigned int mA, nA, mB, nB; // Dimensão das matrizes de entrada
@@ -147,8 +174,15 @@ int main(int argc, char** argv) {
 	if (h_c == NULL) {
 		cerr << "Erro de alocacao da matriz de saida" << endl;
 		exit(EXIT_FAILURE);
-	}   
+	}
+	
+	//!!! ------------------------ executa sequencial ---------------------------------- !!!//
+	GET_TIME(inicio);
+	multMatSeq(h_a, h_b, h_c, n);
+	GET_TIME(fim);
 
+	tempo_seq = fim-inicio; // calcula o tempo sequencial em segundos
+	
 	//!!! ------------------------ executa em paralelo em CUDA -------------------------- !!!//
 	GET_TIME(begin);
 	// Aloca espaço para as matrizes na GPU
@@ -195,7 +229,7 @@ int main(int argc, char** argv) {
 	free(h_c);
 
 	//------------------------------- imprime dos tempos de execucao ----------------------//
-	printResults(mA, nA, mB, nB, blockLines, blockColumns, delta_eventos, initialParTime, finalParTime);
+	printResults(mA, nA, mB, nB, blockLines, blockColumns, tempo_seq, delta_eventos, initialParTime, finalParTime);
 
 	return 0;
 }
