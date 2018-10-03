@@ -107,9 +107,9 @@ void checkResults(float *mat1, float *mat2, int m, int n){
 /**
  * Imprime os resultados do programa
  */
-void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned int nB, unsigned int blockLines, unsigned int blockColumns, double tempo_seq, double delta_eventos, double initialParTime, double finalParTime, bool csv = true){
+void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned int nB, unsigned int blockLines, unsigned int blockColumns, double tempoSeq, double delta_eventos, double initialParTime, double finalParTime, bool csv = true){
 	if (csv) {
-		cout << mA << ";" << nA << ";" << mB << ";" << nB << ";" << blockLines << ";" << blockColumns << ";" << tempo_seq << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << ";" << endl;
+		cout << mA << ";" << nA << ";" << mB << ";" << nB << ";" << blockLines << ";" << blockColumns << ";" << tempoSeq << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << ";" << endl;
 	} else {
 		cout << "Dimensões da matriz A = " << mA << " x " << nA << endl
 			 << "Dimensões da matriz B = " << mB << " x " << nB << endl
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
 	float *h_a, *h_b, *h_c, *h_c_seq; //matrizes host
 	float *d_a, *d_b, *d_c; //matrizes device
 	//para medidas de tempo
-	double begin, end, initialParTime, finalParTime, tempo_seq;
+	double begin, end, initialParTime, finalParTime, tempoSeq;
 	cudaEvent_t start, stop;
 	//entrada de dados
 	unsigned int mA, nA, mB, nB; // Dimensão das matrizes de entrada
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
 	multMatSeq(h_a, h_b, h_c, n);
 	GET_TIME(fim);
 
-	tempo_seq = fim-inicio; // calcula o tempo sequencial em segundos
+	tempoSeq = fim-inicio; // calcula o tempo sequencial em segundos
 	
 	//!!! ------------------------ executa em paralelo em CUDA -------------------------- !!!//
 	GET_TIME(begin);
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 	free(h_c);
 
 	//------------------------------- imprime dos tempos de execucao ----------------------//
-	printResults(mA, nA, mB, nB, blockLines, blockColumns, tempo_seq, delta_eventos, initialParTime, finalParTime);
+	printResults(mA, nA, mB, nB, blockLines, blockColumns, tempoSeq, delta_eventos, initialParTime, finalParTime);
 
 	return 0;
 }
