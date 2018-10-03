@@ -38,7 +38,7 @@ void multMatSeq(float *a, float *b, float *c, int mA, int nAmB, int nB) {
          for(k=0; k<nAmB; k++) {
             soma += a[i*nAmB+k] * b[k*nB+j];
          }
-         c[i*n+j] = soma;
+         c[i*nB+j] = soma;
       }
 }
 
@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
 	
 	//!!! ------------------------ executa sequencial ---------------------------------- !!!//
 	GET_TIME(begin);
-	multMatSeq(h_a, h_b, h_c_seq, ma, nA, nB);
+	multMatSeq(h_a, h_b, h_c_seq, mA, nA, nB);
 	GET_TIME(end);
 
 	tempoSeq = end-begin; // calcula o tempo sequencial em segundos
