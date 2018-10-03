@@ -111,7 +111,7 @@ void checkResults(double *mat1, double *mat2, int m, int n){
 /**
  * Imprime os resultados do programa
  */
-void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned int nB, unsigned int blockLines, unsigned int blockColumns, double tempoSeq, double delta_eventos, double initialParTime, double finalParTime, bool csv = true){
+void printResults(unsigned int mA, unsigned int nA, unsigned int mB, unsigned int nB, unsigned int blockLines, unsigned int blockColumns, double tempoSeq, float delta_eventos, double initialParTime, double finalParTime, bool csv = true){
 	if (csv) {
 		cout << mA << ";" << nA << ";" << mB << ";" << nB << ";" << blockLines << ";" << blockColumns << ";" << tempoSeq << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << ";" << endl;
 	} else {
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
 	CUDA_SAFE_CALL(cudaGetLastError());
 	CUDA_SAFE_CALL(cudaEventRecord(stop));
 	CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-	double delta_eventos = 0;
+	float delta_eventos = 0;
 	CUDA_SAFE_CALL(cudaEventElapsedTime(&delta_eventos, start, stop));
 
 	//copia resultado da GPU para a CPU (device para host)
