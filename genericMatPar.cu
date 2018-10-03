@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
 
 	// Invoca o kernel com blocos de tamanhos fixos
 	dim3 threadsBloco = {blockLines, blockColumns, 1};
-	dim3 blocosGrade = {(nB + threadsBloco.x - 1)/threadsBloco.x, (mA + threadsBloco.y - 1)/threadsBloco.y, 1};
+	dim3 blocosGrade = {(mA + threadsBloco.x - 1)/threadsBloco.x, (nB + threadsBloco.y - 1)/threadsBloco.y, 1};
 	int tamMemCompartilhada = blockLines*blockColumns*8*2;
 	GET_TIME(end);
 	initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
