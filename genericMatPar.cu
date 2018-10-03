@@ -61,8 +61,12 @@ __global__ void multMatPar(float *a, float *b, float *c, int mA, int nAmB, int n
 	for(int passo=0; passo<nAmB; passo+=blockDim.y) {
 		if (i < mA && (passo+j_bloco) < nAmB)
 			Asub[i_bloco*blockDim.y+j_bloco] = a[i*nAmB+passo+j_bloco];
+		else
+			Asub[i_bloco*blockDim.y+j_bloco] = 0;
 		if ((passo+i_bloco) < nAmB && j < nB)
 			Bsub[i_bloco*blockDim.y+j_bloco] = b[(passo+i_bloco)*nAmB+j];
+		else
+			Bsub[i_bloco*blockDim.y+j_bloco] = 0;
 		__syncthreads();
 		if (i < mA && j < nB)
 			for (int k = 0; k < blockDim.y; k++) {
