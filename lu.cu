@@ -3,7 +3,15 @@
 #include <iostream>
 using namespace std;
 
-#define TAM_BLOCO 32
+/**
+ * Para checar erros em chamadas Cuda
+ */
+#define CUDA_SAFE_CALL(call) { \
+	cudaError_t err = call;     \
+	if(err != cudaSuccess) {    \
+		fprintf(stderr,"Erro no arquivo '%s', linha %i: %s.\n",__FILE__, __LINE__,cudaGetErrorString(err)); \
+		exit(EXIT_FAILURE); } \
+}
 
 __global__  void  lu_calc_col( double* d_m , int dim , int i ) {
 	__shared__  double  a_ii;
@@ -50,17 +58,22 @@ void  alg_lu_gpu( double* d_m , int  dim) {
 int  main() {
 	int  dim_mat;
 	double* m;
-	// adicionar   c ́odigo  para  inicializar a vari ́avel
-	// dim_mat (dimens~ao  da  matriz)
+	
+	if(argc < 2) {
+		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz>" << endl;
+		exit(EXIT_FAILURE);
+	}
+	dim_mat = atol(argv[1]);
+	
 	size_t  quant_mem = dim_mat*dim_mat*sizeof(double);
 	m = (double *) malloc(quant_mem);
 	if ( m == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	// adicionar   c ́odigo  para  preencher a matriz
-	// e criar  outros  dados  necess ́arios  para  seu  problema
-	// alocar  mem ́oria   na GPU  para  copiar a matriz
+	// TODO Adicionar código para preencher a matriz e criar outros dados necessários para seu problema
+	
+	// Alocar  memória na GPU  para  copiar a matriz
 	double* d_m;
 	CUDA_SAFE_CALL(cudaMalloc((void**) &d_m, quant_mem));
 	// copiar a matriz  para a GPU
