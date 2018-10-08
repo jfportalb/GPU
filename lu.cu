@@ -26,8 +26,8 @@ __global__  void  lu_calc_col( double* d_m , int dim , int i ) {
 }
 
 __global__  void  lu_calc_subm( double* d_m , int dim , int i) {
-	__shared__  double  a_ji[TAM_BLOCO ];
-	__shared__  double  a_ik[TAM_BLOCO ];
+	__shared__  double  a_ji[32];
+	__shared__  double  a_ik[32];
 	int j = blockDim.x * blockIdx.x + threadIdx.x + i + 1;
 	int k = blockDim.y * blockIdx.y + threadIdx.y + i + 1;
 	if (( threadIdx.y == 0) && (j < dim)) {
@@ -55,7 +55,7 @@ void  alg_lu_gpu( double* d_m , int  dim) {
 	}
 }
 
-int  main() {
+int  main(int argc, char** argv) {
 	int  dim_mat;
 	double* m;
 	
