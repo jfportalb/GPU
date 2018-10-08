@@ -34,6 +34,19 @@ __global__  void  lu_calc_subm( double* d_m , int dim , int i) {
 	}
 }
 
+void  alg_lu_gpu( double* d_m , int  dim) {
+	int i, n_blocos , TAM_BLOCO = 32;
+	for (i = 0; i < dim -1; i++) {
+		n_blocos = ((dim -i-1) + TAM_BLOCO -1) / TAM_BLOCO;
+		dim3  g_blocos(n_blocos , n_blocos);
+		dim3  n_threads(TAM_BLOCO ,TAM_BLOCO);
+		lu_calc_col <<< n_blocos , TAM_BLOCO  >>>(d_m , dim , i);
+		CUDA_SAFE_CALL(cudaGetLastError ());
+		lu_calc_subm <<< g_blocos , n_threads  >>>(d_m , dim , i);
+		CUDA_SAFE_CALL(cudaGetLastError ());
+	}
+}
+
 int  main() {
 	int  dim_mat;
 	double* m;
@@ -42,28 +55,24 @@ int  main() {
 	size_t  quant_mem = dim_mat*dim_mat*sizeof(double);
 	m = (double *) malloc(quant_mem);
 	if ( m == NULL   ) {
-		fprintf(stderr , "Memoria  insuficiente\n");
+		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
 	// adicionar   c ́odigo  para  preencher a matriz
 	// e criar  outros  dados  necess ́arios  para  seu  problema
 	// alocar  mem ́oria   na GPU  para  copiar a matriz
 	double* d_m;
-	CUDA_SAFE_CALL( cudaMalloc( (void **) &d_m , quant_mem ));
+	CUDA_SAFE_CALL(cudaMalloc((void**) &d_m, quant_mem));
 	// copiar a matriz  para a GPU
-	CUDA_SAFE_CALL( cudaMemcpy(m, d_m , quant_mem ,
-	cudaMemcpyDeviceToHost));
-	// executar a fatora ̧c~ao  na GPU
-	alg_lu_gpu(d_m , dim_mat);
+	CUDA_SAFE_CALL(cudaMemcpy(m, d_m, quant_mem, cudaMemcpyDeviceToHost));
+	// executar a fatora ̧cão  na GPU
+	alg_lu_gpu(d_m, dim_mat);
 	// copiar o resultado  da GPU  para a CPU
-	CUDA_SAFE_CALL( cudaMemcpy(m, d_m , quant_mem ,
-	cudaMemcpyDeviceToHost));
+	CUDA_SAFE_CALL(cudaMemcpy(m, d_m, quant_mem, cudaMemcpyDeviceToHost));
 	// limpar a mem ́oria  da GPU
 	CUDA_SAFE_CALL(cudaFree(d_m));
-	// adicionar  c ́odigo  para  usar
-	//as  matrizes L e U (contidas  em m)
-	//e os  outros  dados
+	// adicionar  código  para  usar as  matrizes L e U (contidas  em m) e os  outros  dados
 	free(m);
-	CUDA_SAFE_CALL( cudaDeviceReset () );
+	CUDA_SAFE_CALL(cudaDeviceReset());
 	exit(EXIT_SUCCESS);
 }
