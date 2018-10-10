@@ -4,6 +4,15 @@
 using namespace std;
 
 /**
+ * O agumento deve ser double
+ */
+#define GET_TIME(now) { \
+	struct timespec time; \
+	clock_gettime(CLOCK_MONOTONIC_RAW, &time); \
+	now = time.tv_sec + time.tv_nsec/1000000000.0; \
+}
+
+/**
  * Para checar erros em chamadas Cuda
  */
 #define CUDA_SAFE_CALL(call) { \
@@ -16,29 +25,27 @@ using namespace std;
 void luSeq (double* A, int n) {
 	for (int i=0; i<n-1; i++){
 		for (int j=1; j<n; j++){
-			A[j][i] = A[j][i]/A[i][i];
-		}
-		for (int j=1; j<n; j++){
+			A[j*n+i] = A[j*n+i]/A[i*n+i];
 			for (int k=1; k<n; k++){
-				A[j][k] = A[j][k] - A[j][i]*A[i][k];
+				A[j*n+k] = A[j*n+k] - A[j*n+i]*A[i*n+k];
 			}
 		}
 	}
 }
 
-__global__  void  lu_calc_col( double* d_m , int dim , int i ) {
-	__shared__  double  a_ii;
+__global__  void  luCalcCol( double* A , int dim , int i ) {
+	__shared__  double  Aii;
 	if (threadIdx.x == 0) {
-		a_ii = d_m[i*(dim +1)];
+		Aii = A[i*(dim +1)];
 	}
 	__syncthreads ();
-	int j   = blockIdx.x * blockDim.x + threadIdx.x + i + 1;
+	int j = blockIdx.x * blockDim.x + threadIdx.x + i + 1;
 	if ( j < dim ) {
-		d_m[ j*dim+i ] /= a_ii;
+		A[ j*dim+i ] /= Aii;
 	}
 }
 
-__global__  void  lu_calc_subm( double* d_m , int dim , int i) {
+__global__  void  luCalcSub( double* d_m , int dim , int i) {
 	__shared__  double  a_ji[32];
 	__shared__  double  a_ik[32];
 	int j = blockDim.x * blockIdx.x + threadIdx.x + i + 1;
@@ -55,50 +62,94 @@ __global__  void  lu_calc_subm( double* d_m , int dim , int i) {
 	}
 }
 
-void  alg_lu_gpu( double* d_m , int  dim) {
+void  luGPU( double* A , int  dim) {
 	int i, n_blocos , TAM_BLOCO = 32;
 	for (i = 0; i < dim -1; i++) {
 		n_blocos = ((dim -i-1) + TAM_BLOCO -1) / TAM_BLOCO;
 		dim3  g_blocos(n_blocos , n_blocos);
 		dim3  n_threads(TAM_BLOCO ,TAM_BLOCO);
-		lu_calc_col <<< n_blocos , TAM_BLOCO  >>>(d_m , dim , i);
+		luCalcCol <<< n_blocos , TAM_BLOCO  >>>(A , dim , i);
 		CUDA_SAFE_CALL(cudaGetLastError ());
-		lu_calc_subm <<< g_blocos , n_threads  >>>(d_m , dim , i);
+		luCalcSub <<< g_blocos , n_threads  >>>(A , dim , i);
 		CUDA_SAFE_CALL(cudaGetLastError ());
 	}
 }
 
+void fillMatrix(double* A, int n){
+	for (int i=0; i<n; i++){
+		for (int j=0; j<n; j++){
+			A[i*n+j] = (i+1)*(j+1);
+		}
+	}
+}
+
+void checkResults(double *mat1, double *mat2, int n){
+	for (int i=0; i<n; i++) {
+		for (int j=0; j<n; j++) {
+			if (fabs(mat1[i*n+j] - mat2[i*n+j]) > 1e-5) {
+				cerr << "Resultado incorreto em " << i << " x " << j << " -> " << mat1[i*n+j] << " " <<  mat2[i*n+j] << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+}
+
+void printResults(int n, double timeSeq, double timeCpuGpu, double timeRunPar, double timeGpuCpu){
+	cout << n << ";" << timeSeq << ";" << timeCpuGpu << ";" << timeRunPar << ";" << timeGpuCpu << endl;
+}
+
 int  main(int argc, char** argv) {
-	int  dim_mat;
-	double* m;
+	int  n;
+	double* Aseq, Apar, Adevice;
+	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;
 	
 	if(argc < 2) {
 		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz>" << endl;
 		exit(EXIT_FAILURE);
 	}
-	dim_mat = atol(argv[1]);
+	n = atol(argv[1]);
 	
-	size_t  quant_mem = dim_mat*dim_mat*sizeof(double);
-	m = (double *) malloc(quant_mem);
-	if ( m == NULL   ) {
+	size_t  quant_mem = n*n*sizeof(double);
+	Aseq = (double *) malloc(quant_mem);
+	if ( Aseq == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	// TODO Adicionar código para preencher a matriz e criar outros dados necessários para seu problema
+	Apar = (double *) malloc(quant_mem);
+	if ( Apar == NULL   ) {
+		cerr << "Memoria  insuficiente" << endl;
+		exit(EXIT_FAILURE);
+	}
+	fillMatrix(Aseq, n);
 	
-	// Alocar  memória na GPU  para  copiar a matriz
-	double* d_m;
-	CUDA_SAFE_CALL(cudaMalloc((void**) &d_m, quant_mem));
-	// copiar a matriz  para a GPU
-	CUDA_SAFE_CALL(cudaMemcpy(m, d_m, quant_mem, cudaMemcpyDeviceToHost));
-	// executar a fatora ̧cão  na GPU
-	alg_lu_gpu(d_m, dim_mat);
-	// copiar o resultado  da GPU  para a CPU
-	CUDA_SAFE_CALL(cudaMemcpy(m, d_m, quant_mem, cudaMemcpyDeviceToHost));
-	// limpar a mem ́oria  da GPU
+	GET_TIME(begin);
+	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, quant_mem));
+	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, quant_mem, cudaMemcpyDeviceToHost));
+	GET_TIME(end);
+	timeCpuGpu = end-begin;
+	
+	GET_TIME(begin);
+	luGPU(Adevice, n);
+	GET_TIME(end);
+	timeRunPar = end-begin;
+	
+	GET_TIME(begin);
+	CUDA_SAFE_CALL(cudaMemcpy(Apar, Adevice, quant_mem, cudaMemcpyDeviceToHost));
+	GET_TIME(end);
+	timeGpuCpu = end-begin;
+	
+	GET_TIME(begin);
+	luSeq(Aseq, n);
+	GET_TIME(end);
+	timeSeq = end-begin;
+	
 	CUDA_SAFE_CALL(cudaFree(d_m));
-	// adicionar  código  para  usar as  matrizes L e U (contidas  em m) e os  outros  dados
-	free(m);
+	free(Aseq);
+	free(Apar);
+	
+	checkResults(Aseq, Apar, n);
+	printResults(n, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu);
+	
 	CUDA_SAFE_CALL(cudaDeviceReset());
 	exit(EXIT_SUCCESS);
 }
