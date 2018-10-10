@@ -100,7 +100,7 @@ void printResults(int n, double timeSeq, double timeCpuGpu, double timeRunPar, d
 
 int  main(int argc, char** argv) {
 	int  n;
-	double* Aseq, Apar, Adevice;
+	double *Aseq, *Apar, *Adevice;
 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;
 	
 	if(argc < 2) {
@@ -143,7 +143,7 @@ int  main(int argc, char** argv) {
 	GET_TIME(end);
 	timeSeq = end-begin;
 	
-	CUDA_SAFE_CALL(cudaFree(d_m));
+	CUDA_SAFE_CALL(cudaFree(Adevice));
 	free(Aseq);
 	free(Apar);
 	
