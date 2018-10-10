@@ -13,6 +13,19 @@ using namespace std;
 		exit(EXIT_FAILURE); } \
 }
 
+void luSeq (double* A, int n) {
+	for (int i=0; i<n-1; i++){
+		for (int j=1; j<n; j++){
+			A[j][i] = A[j][i]/A[i][i];
+		}
+		for (int j=1; j<n; j++){
+			for (int k=1; k<n; k++){
+				A[j][k] = A[j][k] - A[j][i]*A[i][k];
+			}
+		}
+	}
+}
+
 __global__  void  lu_calc_col( double* d_m , int dim , int i ) {
 	__shared__  double  a_ii;
 	if (threadIdx.x == 0) {
