@@ -22,7 +22,7 @@ using namespace std;
 		exit(EXIT_FAILURE); } \
 }
 
-void luSeq (double* A, int n) {
+void luSeq (double *A, int n) {
 	for (int i=0; i<n-1; i++){
 		for (int j=1; j<n; j++){
 			A[j*n+i] = A[j*n+i]/A[i*n+i];
@@ -33,7 +33,7 @@ void luSeq (double* A, int n) {
 	}
 }
 
-__global__  void  luCalcCol( double* A , int dim , int i ) {
+__global__ void luCalcCol(double *A , int dim, int i) {
 	__shared__  double  Aii;
 	if (threadIdx.x == 0) {
 		Aii = A[i*(dim +1)];
@@ -45,33 +45,33 @@ __global__  void  luCalcCol( double* A , int dim , int i ) {
 	}
 }
 
-__global__  void  luCalcSub( double* d_m , int dim , int i) {
+__global__ void luCalcSub(double *A, int dim , int i) {
 	__shared__  double  a_ji[32];
 	__shared__  double  a_ik[32];
 	int j = blockDim.x * blockIdx.x + threadIdx.x + i + 1;
 	int k = blockDim.y * blockIdx.y + threadIdx.y + i + 1;
 	if (( threadIdx.y == 0) && (j < dim)) {
-		a_ji[threadIdx.x] = d_m[ j*dim + i ];
+		a_ji[threadIdx.x] = A[ j*dim + i ];
 	}
 	if (( threadIdx.x == 0) && (k < dim)) {
-		a_ik[threadIdx.y] = d_m[ i*dim + k ];
+		a_ik[threadIdx.y] = A[ i*dim + k ];
 	}
 	__syncthreads ();
 	if ((j < dim) && (k < dim)) {
-		d_m[ j*dim + k ] -= a_ji[threadIdx.x] * a_ik[threadIdx.y];
+		A[ j*dim + k ] -= a_ji[threadIdx.x] * a_ik[threadIdx.y];
 	}
 }
 
-void  luGPU( double* A , int  dim) {
-	int i, n_blocos , TAM_BLOCO = 32;
-	for (i = 0; i < dim -1; i++) {
-		n_blocos = ((dim -i-1) + TAM_BLOCO -1) / TAM_BLOCO;
-		dim3  g_blocos(n_blocos , n_blocos);
-		dim3  n_threads(TAM_BLOCO ,TAM_BLOCO);
-		luCalcCol <<< n_blocos , TAM_BLOCO  >>>(A , dim , i);
-		CUDA_SAFE_CALL(cudaGetLastError ());
-		luCalcSub <<< g_blocos , n_threads  >>>(A , dim , i);
-		CUDA_SAFE_CALL(cudaGetLastError ());
+void  luGPU(double *A, int n, int blockSize) {
+	int i, n_blocos;
+	for (i = 0; i < n-1; i++) {
+		n_blocos = ((n-i-1) + blockSize -1) / blockSize;
+		dim3  g_blocos(n_blocos, n_blocos);
+		dim3  n_threads(blockSize,blockSize);
+		luCalcCol <<< n_blocos, blockSize >>>(A, n, i);
+		CUDA_SAFE_CALL(cudaGetLastError());
+		luCalcSub <<< g_blocos, n_threads >>>(A, n, i);
+		CUDA_SAFE_CALL(cudaGetLastError());
 	}
 }
 
@@ -99,15 +99,16 @@ void printResults(int n, double timeSeq, double timeCpuGpu, double timeRunPar, d
 }
 
 int  main(int argc, char** argv) {
-	int  n;
+	int n, blockSize;
 	double *Aseq, *Apar, *Adevice;
 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;
 	
-	if(argc < 2) {
-		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz>" << endl;
+	if(argc < 3) {
+		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
 		exit(EXIT_FAILURE);
 	}
 	n = atol(argv[1]);
+	blockSize = atol(argv[2]);
 	
 	size_t  quant_mem = n*n*sizeof(double);
 	Aseq = (double *) malloc(quant_mem);
@@ -129,7 +130,7 @@ int  main(int argc, char** argv) {
 	timeCpuGpu = end-begin;
 	
 	GET_TIME(begin);
-	luGPU(Adevice, n);
+	luGPU(Adevice, n, blockSize);
 	GET_TIME(end);
 	timeRunPar = end-begin;
 	
