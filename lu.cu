@@ -159,8 +159,8 @@ int  main(int argc, char** argv) {
 	checkResults(Aseq, Apar, n);
 	
 	ofstream outfile (outputFileName, ios::binary);
-	outfile.write(&n, sizeof(int));
-	outfile.write(Aseq, matBytes);
+	outfile.write(reinterpret_cast<char *>(&n), sizeof(int));
+	outfile.write(reinterpret_cast<char *>(Aseq), matBytes);
 	outfile.close();
 	
 	printResults(n, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu);
