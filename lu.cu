@@ -114,8 +114,8 @@ int  main(int argc, char** argv) {
 	outputFileName = argv[3];
 	
 	ifstream infile;
-	infile.open(inputFileName, ios::binary | ios::in);
-	infile.read(&n, sizeof(int));
+	infile.open(inputFileName, ios::binary);
+	infile.read(reinterpret_cast<char *>(&n), sizeof(int));
 	
 	size_t  matBytes = n*n*sizeof(double);
 	Aseq = (double *) malloc(matBytes);
@@ -129,7 +129,7 @@ int  main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 // 	fillMatrix(Aseq, n);
-	infile.read(&Aseq, matBytes);
+	infile.read(reinterpret_cast<char *>(Aseq), matBytes);
 	
 	GET_TIME(begin);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
