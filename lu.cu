@@ -99,10 +99,10 @@ void printResults(int n, double timeSeq, double timeCpuGpu, double timeRunPar, d
 }
 
 int  main(int argc, char** argv) {
-	int n, blockSize;
+	int n=0, blockSize;
 	double *Aseq, *Apar, *Adevice;
 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;
-	char* inputFileName, outputFileName;
+	char *inputFileName, *outputFileName;
 	
 	if(argc < 4) {
 		cerr << "Digite: "<< argv[0] <<" <Dimensão do bloco> <Arquivo de entrada> <Arquivo de saída>" << endl;
@@ -112,8 +112,8 @@ int  main(int argc, char** argv) {
 	inputFileName = argv[2];
 	outputFileName = argv[3];
 	
-	ifstream infile;
-	infile.open(inputFileName, ios::binary | ios::in)
+	ios::ifstream infile;
+	infile.open(inputFileName, ios::binary | ios::in);
 	infile.read(&n, sizeof(int));
 	
 	size_t  matBytes = n*n*sizeof(double);
