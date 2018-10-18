@@ -113,8 +113,7 @@ int  main(int argc, char** argv) {
 	inputFileName = argv[2];
 	outputFileName = argv[3];
 	
-	ifstream infile;
-	infile.open(inputFileName, ios::binary);
+	ifstream infile (inputFileName, ios::binary);
 	infile.read(reinterpret_cast<char *>(&n), sizeof(int));
 	
 	size_t  matBytes = n*n*sizeof(double);
@@ -123,13 +122,14 @@ int  main(int argc, char** argv) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
+	infile.read(reinterpret_cast<char *>(Aseq), matBytes);
+	infile.close();
+	
 	Apar = (double *) malloc(matBytes);
 	if ( Apar == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-// 	fillMatrix(Aseq, n);
-	infile.read(reinterpret_cast<char *>(Aseq), matBytes);
 	
 	GET_TIME(begin);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
@@ -157,6 +157,12 @@ int  main(int argc, char** argv) {
 	free(Apar);
 	
 	checkResults(Aseq, Apar, n);
+	
+	ofstream outfile (outputFileName, ios::binary);
+	outfile.write(&n, sizeof(int));
+	outfile.write(Aseq, matBytes);
+	outfile.close();
+	
 	printResults(n, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu);
 	
 	CUDA_SAFE_CALL(cudaDeviceReset());
