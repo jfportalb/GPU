@@ -112,7 +112,7 @@ int  main(int argc, char** argv) {
 	inputFileName = argv[2];
 	outputFileName = argv[3];
 	
-	ios::ifstream infile;
+	ifstream infile;
 	infile.open(inputFileName, ios::binary | ios::in);
 	infile.read(&n, sizeof(int));
 	
