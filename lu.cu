@@ -102,30 +102,37 @@ int  main(int argc, char** argv) {
 	int n, blockSize;
 	double *Aseq, *Apar, *Adevice;
 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;
+	char* inputFileName, outputFileName;
 	
-	if(argc < 3) {
-		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
+	if(argc < 4) {
+		cerr << "Digite: "<< argv[0] <<" <Dimensão do bloco> <Arquivo de entrada> <Arquivo de saída>" << endl;
 		exit(EXIT_FAILURE);
 	}
-	n = atol(argv[1]);
-	blockSize = atol(argv[2]);
+	blockSize = atol(argv[1]);
+	inputFileName = argv[2];
+	outputFileName = argv[3];
 	
-	size_t  quant_mem = n*n*sizeof(double);
-	Aseq = (double *) malloc(quant_mem);
+	ifstream infile;
+	infile.open(inputFileName, ios::binary | ios::in)
+	infile.read(&n, sizeof(int));
+	
+	size_t  matBytes = n*n*sizeof(double);
+	Aseq = (double *) malloc(matBytes);
 	if ( Aseq == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	Apar = (double *) malloc(quant_mem);
+	Apar = (double *) malloc(matBytes);
 	if ( Apar == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	fillMatrix(Aseq, n);
+// 	fillMatrix(Aseq, n);
+	infile.read(&Aseq, matBytes);
 	
 	GET_TIME(begin);
-	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, quant_mem));
-	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, quant_mem, cudaMemcpyDeviceToHost));
+	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
+	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, matBytes, cudaMemcpyDeviceToHost));
 	GET_TIME(end);
 	timeCpuGpu = end-begin;
 	
@@ -135,7 +142,7 @@ int  main(int argc, char** argv) {
 	timeRunPar = end-begin;
 	
 	GET_TIME(begin);
-	CUDA_SAFE_CALL(cudaMemcpy(Apar, Adevice, quant_mem, cudaMemcpyDeviceToHost));
+	CUDA_SAFE_CALL(cudaMemcpy(Apar, Adevice, matBytes, cudaMemcpyDeviceToHost));
 	GET_TIME(end);
 	timeGpuCpu = end-begin;
 	
