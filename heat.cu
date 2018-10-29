@@ -50,67 +50,48 @@ void print(double *A, int n){
 
 int  main(int argc, char** argv) {
 	int n=0, blockSize;
-	double *Aseq, *Apar, *Adevice;
-	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;
-	char *inputFileName, *outputFileName;
-	
+	double *Aseq, *Adevice;
+	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
 	if(argc < 4) {
-		cerr << "Digite: "<< argv[0] <<" <Dimensão do bloco> <Arquivo de entrada> <Arquivo de saída>" << endl;
+		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
 		exit(EXIT_FAILURE);
 	}
-	blockSize = atol(argv[1]);
-	inputFileName = argv[2];
-	outputFileName = argv[3];
+	n = atol(argv[1]);
+	blockSize = atol(argv[2]);
 	
-	ifstream infile (inputFileName, ios::binary);
-	infile.read(reinterpret_cast<char *>(&n), sizeof(int));
-	
-	size_t  matBytes = n*n*sizeof(double);
+	size_t matBytes = n*n*sizeof(double);
 	Aseq = (double *) malloc(matBytes);
 	if ( Aseq == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	infile.read(reinterpret_cast<char *>(Aseq), matBytes);
-	infile.close();
+	fillMatrix(Aseq, n);
+	print(Aseq, n);
+// 	GET_TIME(begin);
+// 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
+// 	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, matBytes, cudaMemcpyDeviceToHost));
+// 	GET_TIME(end);
+// 	timeCpuGpu = end-begin;
 	
-	Apar = (double *) malloc(matBytes);
-	if ( Apar == NULL   ) {
-		cerr << "Memoria  insuficiente" << endl;
-		exit(EXIT_FAILURE);
-	}
+// 	GET_TIME(begin);
+// 	luGPU(Adevice, n, blockSize);
+// 	GET_TIME(end);
+// 	timeRunPar = end-begin;
 	
-	GET_TIME(begin);
-	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
-	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, matBytes, cudaMemcpyDeviceToHost));
-	GET_TIME(end);
-	timeCpuGpu = end-begin;
+// 	GET_TIME(begin);
+// 	CUDA_SAFE_CALL(cudaMemcpy(Apar, Adevice, matBytes, cudaMemcpyDeviceToHost));
+// 	GET_TIME(end);
+// 	timeGpuCpu = end-begin;
 	
-	GET_TIME(begin);
-	luGPU(Adevice, n, blockSize);
-	GET_TIME(end);
-	timeRunPar = end-begin;
+// 	GET_TIME(begin);
+// 	luSeq(Aseq, n);
+// 	GET_TIME(end);
+// 	timeSeq = end-begin;
 	
-	GET_TIME(begin);
-	CUDA_SAFE_CALL(cudaMemcpy(Apar, Adevice, matBytes, cudaMemcpyDeviceToHost));
-	GET_TIME(end);
-	timeGpuCpu = end-begin;
-	
-	GET_TIME(begin);
-	luSeq(Aseq, n);
-	GET_TIME(end);
-	timeSeq = end-begin;
-	
-	CUDA_SAFE_CALL(cudaFree(Adevice));
+// 	CUDA_SAFE_CALL(cudaFree(Adevice));
 	free(Aseq);
-	free(Apar);
 	
 	checkResults(Aseq, Apar, n);
-	
-	ofstream outfile (outputFileName, ios::binary);
-	outfile.write(reinterpret_cast<char *>(&n), sizeof(int));
-	outfile.write(reinterpret_cast<char *>(Aseq), matBytes);
-	outfile.close();
 	
 	printResults(n, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu);
 	
