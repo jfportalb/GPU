@@ -28,7 +28,7 @@ void setupMatrix(double *A, int n){
 		A[i] = 20;
 		A[n*n-i-1]=30;
 	}
-	double t = 20, a = 10.0/n;
+	double t = 20, a = 10.0/(n-1);
 	for (int i=1; i<n-1; i++){
 		t+=a;
 		A[i*n] = t;
