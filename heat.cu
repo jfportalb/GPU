@@ -52,7 +52,7 @@ int  main(int argc, char** argv) {
 	int n=0, blockSize;
 	double *Aseq, *Adevice;
 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
-	if(argc < 4) {
+	if(argc < 3) {
 		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
 		exit(EXIT_FAILURE);
 	}
