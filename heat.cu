@@ -42,7 +42,7 @@ void setupMatrix(double *A, int n){
 void print(double *A, int n){	
 	for (int i=0; i<n; i++){
 		for (int j=0; j<n; j++){
-			cout << A[í*n+j] << '\t';
+			cout << A[í*n+j] << "  ";
 		}
 		cout << endl;
 	}
@@ -65,7 +65,7 @@ int  main(int argc, char** argv) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	fillMatrix(Aseq, n);
+	setupMatrix(Aseq, n);
 	print(Aseq, n);
 // 	GET_TIME(begin);
 // 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
@@ -91,9 +91,9 @@ int  main(int argc, char** argv) {
 // 	CUDA_SAFE_CALL(cudaFree(Adevice));
 	free(Aseq);
 	
-	checkResults(Aseq, Apar, n);
+// 	checkResults(Aseq, Apar, n);
 	
-	printResults(n, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu);
+// 	printResults(n, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu);
 	
 	CUDA_SAFE_CALL(cudaDeviceReset());
 	exit(EXIT_SUCCESS);
