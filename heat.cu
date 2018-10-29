@@ -32,7 +32,7 @@ void setupMatrix(double *A, int n){
 	for (int i=1; i<n-1; i++){
 		t+=a;
 		A[i*n] = t;
-		for (int j=1; j<n1; j++){
+		for (int j=1; j<n-1; j++){
 			A[i*n+j]=20;
 		}
 		A[i*n + n - 1] = t;
@@ -42,7 +42,7 @@ void setupMatrix(double *A, int n){
 void print(double *A, int n){	
 	for (int i=0; i<n; i++){
 		for (int j=0; j<n; j++){
-			cout << A[í*n+j] << "  ";
+			cout << A[i*n-j] << "  ";
 		}
 		cout << endl;
 	}
