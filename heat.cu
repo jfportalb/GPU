@@ -4,6 +4,8 @@
 #include <fstream>
 using namespace std;
 
+#define alpha 19e-5
+
 /**
  * O argumento deve ser double
  */
@@ -39,6 +41,18 @@ void setupMatrix(double *A, int n){
 	}
 }
 
+__global__ void updateHeat(double *A , int dim) {
+	__shared__  double  Aii;
+	if (threadIdx.x == 0) {
+		Aii = A[i*(dim +1)];
+	}
+	__syncthreads ();
+	int j = blockIdx.x * blockDim.x + threadIdx.x + i + 1;
+	if ( j < dim ) {
+		A[ j*dim+i ] /= Aii;
+	}
+}
+
 void print(double *A, int n){	
 	for (int i=0; i<n; i++){
 		for (int j=0; j<n; j++){
@@ -67,6 +81,7 @@ int  main(int argc, char** argv) {
 	}
 	setupMatrix(Aseq, n);
 	print(Aseq, n);
+	cout << alpha << endl;
 // 	GET_TIME(begin);
 // 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
 // 	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, matBytes, cudaMemcpyDeviceToHost));
