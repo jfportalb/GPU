@@ -41,7 +41,7 @@ void setupMatrix(double *A, int n){
 	}
 }
 
-__global__ void updateHeat(double *A , int dim) {
+__global__ void updateHeat(double *A , int dim, int i) {
 	__shared__  double  Aii;
 	if (threadIdx.x == 0) {
 		Aii = A[i*(dim +1)];
@@ -63,9 +63,9 @@ void print(double *A, int n){
 }
 
 int  main(int argc, char** argv) {
-	int n=0, blockSize;
-	double *Aseq, *Adevice;
-	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
+	int n=0;//, blockSize;
+	double *Aseq;//, *Adevice;
+// 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
 	if(argc < 3) {
 		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
 		exit(EXIT_FAILURE);
