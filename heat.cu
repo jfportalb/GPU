@@ -63,7 +63,7 @@ void print(double *A, int n){
 }
 
 int  main(int argc, char** argv) {
-	int n=0;//, blockSize;
+	int n=0, blockSize;
 	double *Aseq;//, *Adevice;
 // 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
 	if(argc < 3) {
@@ -81,7 +81,7 @@ int  main(int argc, char** argv) {
 	}
 	setupMatrix(Aseq, n);
 	print(Aseq, n);
-	cout << alpha << endl;
+	cout << alpha << " " << blockSize << endl;
 // 	GET_TIME(begin);
 // 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
 // 	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, matBytes, cudaMemcpyDeviceToHost));
