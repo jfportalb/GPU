@@ -4,7 +4,10 @@
 #include <fstream>
 using namespace std;
 
-#define alpha 19e-5
+#define ALPHA 19e-5
+#define DELTA_T 120
+#define ROUNDS 3*60*60/DELTA_T
+#define DISTANCE 0.1
 
 /**
  * O argumento deve ser double
@@ -41,16 +44,34 @@ void setupMatrix(double *A, int n){
 	}
 }
 
-__global__ void updateHeat(double *A , int dim, int i) {
-	__shared__  double  Aii;
-	if (threadIdx.x == 0) {
-		Aii = A[i*(dim +1)];
+__global__ void updateHeat(double *last, double *next , int n) {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	int pos = i*n + j;
+	if (i==0 || i==n-1 || j==0 || j==n-1){
+		next[pos] = last[pos];
+	} else if (i < n && j < n){
+		next[pos] = last[pos] + 
+			(ALPHA*DELTA_T/(DISTANCE*DIS))*(last[pos-1]+last[pos+1]+last[pos-n]+last[pos+n]-4*last[pos]);	
 	}
-	__syncthreads ();
-	int j = blockIdx.x * blockDim.x + threadIdx.x + i + 1;
-	if ( j < dim ) {
-		A[ j*dim+i ] /= Aii;
+}
+
+void playRounds(double *Adevice, int n, int blockSize) {
+	double *Atemp, *aux;
+	CUDA_SAFE_CALL(cudaMalloc((void**) &Atemp, matBytes));
+	
+	nBlocks = (n + blockSize -1) / blockSize;
+	dim3  gBlocks(nBlocks, nBlocks);
+	dim3 nThreads(blockSize,blockSize);
+	
+	for(int i=0; i<ROUNDS; i++){
+		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n);
+		CUDA_SAFE_CALL(cudaGetLastError());
+		aux = Adevice;
+		Adevice = Atemp;
+		Atemp = Adevice;
 	}
+	CUDA_SAFE_CALL(cudaFree(Atemp));
 }
 
 void print(double *A, int n){	
@@ -62,10 +83,14 @@ void print(double *A, int n){
 	}
 }
 
+void printResults(int n, double timeCpuGpu, double timeRunPar, double timeGpuCpu){
+	cout << n << ";" << timeCpuGpu << ";" << timeRunPar << ";" << timeGpuCpu << endl;
+}
+
 int  main(int argc, char** argv) {
 	int n=0, blockSize;
-	double *Aseq;//, *Adevice;
-// 	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
+	double *A, *Adevice;
+	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
 	if(argc < 3) {
 		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
 		exit(EXIT_FAILURE);
@@ -74,41 +99,33 @@ int  main(int argc, char** argv) {
 	blockSize = atol(argv[2]);
 	
 	size_t matBytes = n*n*sizeof(double);
-	Aseq = (double *) malloc(matBytes);
-	if ( Aseq == NULL   ) {
+	A = (double *) malloc(matBytes);
+	if ( A == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	setupMatrix(Aseq, n);
-	print(Aseq, n);
-	cout << alpha << " " << blockSize << endl;
-// 	GET_TIME(begin);
-// 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
-// 	CUDA_SAFE_CALL(cudaMemcpy(Aseq, Adevice, matBytes, cudaMemcpyDeviceToHost));
-// 	GET_TIME(end);
-// 	timeCpuGpu = end-begin;
+	setupMatrix(A, n);
 	
-// 	GET_TIME(begin);
-// 	luGPU(Adevice, n, blockSize);
-// 	GET_TIME(end);
-// 	timeRunPar = end-begin;
+	GET_TIME(begin);
+	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
+	CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+	GET_TIME(end);
+	timeCpuGpu = end-begin;
 	
-// 	GET_TIME(begin);
-// 	CUDA_SAFE_CALL(cudaMemcpy(Apar, Adevice, matBytes, cudaMemcpyDeviceToHost));
-// 	GET_TIME(end);
-// 	timeGpuCpu = end-begin;
+	GET_TIME(begin);
+	playRounds(Adevice, n, blockSize);
+	GET_TIME(end);
+	timeRunPar = end-begin;
 	
-// 	GET_TIME(begin);
-// 	luSeq(Aseq, n);
-// 	GET_TIME(end);
-// 	timeSeq = end-begin;
+	GET_TIME(begin);
+	CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+	GET_TIME(end);
+	timeGpuCpu = end-begin;
 	
-// 	CUDA_SAFE_CALL(cudaFree(Adevice));
-	free(Aseq);
+	CUDA_SAFE_CALL(cudaFree(Adevice));
+	free(A);
 	
-// 	checkResults(Aseq, Apar, n);
-	
-// 	printResults(n, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu);
+	printResults(n, timeCpuGpu, timeRunPar, timeGpuCpu);
 	
 	CUDA_SAFE_CALL(cudaDeviceReset());
 	exit(EXIT_SUCCESS);
