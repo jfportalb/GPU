@@ -148,7 +148,7 @@ int  main(int argc, char** argv) {
 	timeGpuCpu = end-begin;
 	
 	GET_TIME(begin);
-	//luSeq(Aseq, n);
+	luSeq(Aseq, n);
 	GET_TIME(end);
 	timeSeq = end-begin;
 	
