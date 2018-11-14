@@ -5,7 +5,7 @@
 using namespace std;
 
 /**
- * O agumento deve ser double
+ * O argumento deve ser double
  */
 #define GET_TIME(now) { \
 	struct timespec time; \
@@ -148,7 +148,7 @@ int  main(int argc, char** argv) {
 	timeGpuCpu = end-begin;
 	
 	GET_TIME(begin);
-	luSeq(Aseq, n);
+	//luSeq(Aseq, n);
 	GET_TIME(end);
 	timeSeq = end-begin;
 	
