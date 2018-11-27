@@ -41,24 +41,22 @@ __global__ void applyMask(uint8_t *image, uint8_t *ret, int width, int heigth, i
 
 __global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int width, int heigth, int colors) {
 	__shared__ uint8_t *subimage;
-	int i = blockDim.x * blockIdx.x + threadIdx.x +1;
-	int j = blockDim.y * blockIdx.y + threadIdx.y +1;
-	int c = threadIdx.z;
+	int i = (blockDim.x - 2) * blockIdx.x + threadIdx.x,
+		j = (blockDim.y - 2) * blockIdx.y + threadIdx.y,
+		c = threadIdx.z, x = threadIdx.x, y = threadIdx.y;
 	if (i<heigth && j<width){
-		subimage[c+colors*((threadIdx.x+1)*blockDim.x + threadIdx.y+1)] = image[c+colors*((i)*width+j)];
-		if (!threadIdx.x){
-			subimage[c+colors*((threadIdx.x)*blockDim.x + threadIdx.y+1)] = image[c+colors*((i-1)*width+j)];
-			if (!threadIdx.y){
-				subimage[c+colors*((threadIdx.x)*blockDim.x + threadIdx.y)] = image[c+colors*((i-1)*width+j-1)];
-			}
+		subimage[c+colors*(x*blockDim.x + y)] = image[c+colors*((i)*width+j)];
+		__syncthreads();
+		if (x && x!=blockDim.x && y && y!=blockDim.y){
+			int gx = image[c+colors*((i-1)*width + j-1)] + 2*image[c+colors*((i-1)*width+j)] + image[c+colors*((i-1)*width+j+1)] - image[c+colors*((i+1)*width+j-1)] - 2*image[c+colors*((i+1)*width+j)] - image[c+colors*((i+1)*width+j+1)];
+			int gy = image[c+colors*((i-1)*width+j-1)] + 2*image[c+colors*(i*width+j-1)] + image[c+colors*((i+1)*width+j-1)] - image[c+colors*((i-1)*width+j+1)] - 2*image[c+colors*(i*width+j+1)] - image[c+colors*((i+1)*width+j+1)];
+			double g = sqrtf(gx*gx + gy*gy)/4;
+			ret[c+colors*(i*width+j)] = (uint8_t) g;
+		} else {
+			__syncthreads();
 		}
-		if (!threadIdx.y){
-			subimage[c+colors*((threadIdx.x+1)*blockDim.x + threadIdx.y)] = image[c+colors*((i)*width+j-1)];
-		}
-		int gx = image[c+colors*((i-1)*width + j-1)] + 2*image[c+colors*((i-1)*width+j)] + image[c+colors*((i-1)*width+j+1)] - image[c+colors*((i+1)*width+j-1)] - 2*image[c+colors*((i+1)*width+j)] - image[c+colors*((i+1)*width+j+1)];
-		int gy = image[c+colors*((i-1)*width+j-1)] + 2*image[c+colors*(i*width+j-1)] + image[c+colors*((i+1)*width+j-1)] - image[c+colors*((i-1)*width+j+1)] - 2*image[c+colors*(i*width+j+1)] - image[c+colors*((i+1)*width+j+1)];
-		double g = sqrtf(gx*gx + gy*gy)/4;
-		ret[c+colors*(i*width+j)] = (uint8_t) g;
+	} else {
+		__syncthreads();
 	}
 }
 
@@ -108,8 +106,6 @@ void applyMaskPar(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 			CUDA_SAFE_CALL(cudaMemcpy(original, image, imageBytes, cudaMemcpyHostToDevice));
 
 			// Invoca o kernel com blocos de tamanhos fixos
-			dim3 threadsBlock = {blockDim, blockDim, colors};
-			dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/threadsBlock.x, (width + threadsBlock.y - 3)/threadsBlock.y, 1};
 			GET_TIME(end);
 			initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
 
@@ -118,9 +114,13 @@ void applyMaskPar(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 			CUDA_SAFE_CALL(cudaEventCreate(&stop));
 			CUDA_SAFE_CALL(cudaEventRecord(start));
 			if (shared){
-				int tamMemCompartilhada = (threadsBlock.x+1)*(threadsBlock.y+1)*colors*sizeof(uint8_t);
+				dim3 threadsBlock = {blockDim, blockDim, colors};
+				dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/(blockDim-2), (width + threadsBlock.y - 3)/(blockDim-2), 1};
+				int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*colors*sizeof(uint8_t);
 				applyMaskWithSharedMemory<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
 			} else {
+				dim3 threadsBlock = {blockDim, blockDim, colors};
+				dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/threadsBlock.x, (width + threadsBlock.y - 3)/threadsBlock.y, 1};
 				applyMask<<<blocksGrid, threadsBlock>>>(original, result, width, heigth, colors);
 			}
 			CUDA_SAFE_CALL(cudaGetLastError());
