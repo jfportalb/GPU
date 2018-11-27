@@ -40,7 +40,7 @@ __global__ void applyMask(uint8_t *image, uint8_t *ret, int width, int heigth, i
 }
 
 __global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int width, int heigth, int colors) {
-	__shared__ uint8_t *subimage;
+	extern __shared__ uint8_t *subimage;
 	int i = (blockDim.x - 2) * blockIdx.x + threadIdx.x,
 		j = (blockDim.y - 2) * blockIdx.y + threadIdx.y,
 		c = threadIdx.z, x = threadIdx.x, y = threadIdx.y;
