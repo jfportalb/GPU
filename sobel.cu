@@ -39,7 +39,30 @@ __global__ void applyMask(uint8_t *image, uint8_t *ret, int width, int heigth, i
 	}
 }
 
-void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, unsigned int blockDim){
+__global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int width, int heigth, int colors) {
+	__shared__ uint8_t *subimage;
+	int i = blockDim.x * blockIdx.x + threadIdx.x +1;
+	int j = blockDim.y * blockIdx.y + threadIdx.y +1;
+	int c = threadIdx.z;
+	if (i<heigth && j<width){
+		subimage[c+colors*((threadIdx.x+1)*width + threadIdx.y+1)] = image[c+colors*((i)*width+j)];
+		if (!threadIdx.x){
+			subimage[c+colors*((threadIdx.x)*width + threadIdx.y+1)] = image[c+colors*((i-1)*width+j)];
+			if (!threadIdx.y){
+				subimage[c+colors*((threadIdx.x)*width + threadIdx.y)] = image[c+colors*((i-1)*width+j-1)];
+			}
+		}
+		if (!threadIdx.y){
+			subimage[c+colors*((threadIdx.x+1)*width + threadIdx.y)] = image[c+colors*((i)*width+j-1)];
+		}
+		int gx = image[c+colors*((i-1)*width + j-1)] + 2*image[c+colors*((i-1)*width+j)] + image[c+colors*((i-1)*width+j+1)] - image[c+colors*((i+1)*width+j-1)] - 2*image[c+colors*((i+1)*width+j)] - image[c+colors*((i+1)*width+j+1)];
+		int gy = image[c+colors*((i-1)*width+j-1)] + 2*image[c+colors*(i*width+j-1)] + image[c+colors*((i+1)*width+j-1)] - image[c+colors*((i-1)*width+j+1)] - 2*image[c+colors*(i*width+j+1)] - image[c+colors*((i+1)*width+j+1)];
+		double g = sqrtf(gx*gx + gy*gy)/4;
+		ret[c+colors*(i*width+j)] = (uint8_t) g;
+	}
+}
+
+void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, unsigned int blockDim, bool shared){
 		uint8_t *image = imagePointer[0];
 		double initialParTime, finalParTime;
 		float delta_eventos = 0;
@@ -57,7 +80,6 @@ void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, uns
 			// Invoca o kernel com blocos de tamanhos fixos
 			dim3 threadsBlock = {blockDim, blockDim, colors};
 			dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/threadsBlock.x, (width + threadsBlock.y - 3)/threadsBlock.y, 1};
-			int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*8*2;
 			GET_TIME(end);
 			initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
 
@@ -65,7 +87,12 @@ void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, uns
 			CUDA_SAFE_CALL(cudaEventCreate(&start));
 			CUDA_SAFE_CALL(cudaEventCreate(&stop));
 			CUDA_SAFE_CALL(cudaEventRecord(start));
-			applyMask<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
+			if (shared){
+				int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*8*2;
+				applyMaskWithSharedMemory<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
+			} else {
+				applyMask<<<blocksGrid, threadsBlock>>>(original, result, width, heigth, colors);
+			}
 			CUDA_SAFE_CALL(cudaGetLastError());
 			CUDA_SAFE_CALL(cudaEventRecord(stop));
 			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
