@@ -62,7 +62,37 @@ __global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int widt
 	}
 }
 
-void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, unsigned int blockDim, bool shared){
+/**
+ * Imprime os resultados do programa sequencial
+ */
+void printResultsSeq(unsigned int width, unsigned int heigth, unsigned int colors, double tempoSeq, bool csv = true){
+	if (csv) {
+		cout << width << ";" << heigth << ";" << colors << ";" << tempoSeq<< endl;
+	} else {
+		cout << "Dimensões da imagem = " << width << " x " << heigth << " (x"<<colors<<")" << endl
+			 << "Tempo sequencial = "<< tempoSeq << " seg" << endl;
+	}
+}
+
+/**
+ * Imprime os resultados do programa paralelo
+ */
+void printResultsPar(unsigned int width, unsigned int heigth, unsigned int colors, unsigned int blockDim, float delta_eventos, double initialParTime, double finalParTime, bool csv = true){
+	if (csv) {
+		cout << width << ";" << heigth << ";" << colors << ";" << blockDim << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << endl;
+	} else {
+		cout << "Dimensões da imagem = " << width << " x " << heigth << " (x"<<colors<<")" << endl
+			 << "Dimensões dos blocos = " << blockDim << " x " << blockDim << endl
+			 << "Tempo paralelo kernel = "<< delta_eventos/1000 << " seg" << endl
+			 << "Tempo paralelo begin = "<< initialParTime <<" seg" << endl
+			 << "Tempo paralelo end    = "<< finalParTime <<" seg" << endl
+			 << "Tempo paralelo total  = "<< initialParTime+(delta_eventos/1000)+finalParTime <<" seg" << endl;
+	}
+}
+
+void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, int blockDim, bool shared){
+		long int imageBytes = width*heigth*colors*sizeof(uint8_t);
+		double begin, end;
 		uint8_t *image = imagePointer[0];
 		double initialParTime, finalParTime;
 		float delta_eventos = 0;
@@ -112,6 +142,7 @@ void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, uns
 }
 
 void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
+	double begin, end;
 	uint8_t *image = imagePointer[0], *ret;
 	long int imageBytes = width*heigth*colors*sizeof(uint8_t);
 	ret = (uint8_t *) malloc(imageBytes);
@@ -138,37 +169,7 @@ void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
 	free(image);
 }
 
-/**
- * Imprime os resultados do programa sequencial
- */
-void printResultsSeq(unsigned int width, unsigned int heigth, unsigned int colors, double tempoSeq, bool csv = true){
-	if (csv) {
-		cout << width << ";" << heigth << ";" << colors << ";" << tempoSeq<< endl;
-	} else {
-		cout << "Dimensões da imagem = " << width << " x " << heigth << " (x"<<colors<<")" << endl
-			 << "Tempo sequencial = "<< tempoSeq << " seg" << endl;
-	}
-}
-
-/**
- * Imprime os resultados do programa paralelo
- */
-void printResultsPar(unsigned int width, unsigned int heigth, unsigned int colors, unsigned int blockDim, float delta_eventos, double initialParTime, double finalParTime, bool csv = true){
-	if (csv) {
-		cout << width << ";" << heigth << ";" << colors << ";" << blockDim << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << endl;
-	} else {
-		cout << "Dimensões da imagem = " << width << " x " << heigth << " (x"<<colors<<")" << endl
-			 << "Dimensões dos blocos = " << blockDim << " x " << blockDim << endl
-			 << "Tempo paralelo kernel = "<< delta_eventos/1000 << " seg" << endl
-			 << "Tempo paralelo begin = "<< initialParTime <<" seg" << endl
-			 << "Tempo paralelo end    = "<< finalParTime <<" seg" << endl
-			 << "Tempo paralelo total  = "<< initialParTime+(delta_eventos/1000)+finalParTime <<" seg" << endl;
-	}
-}
-
 int main(int argc, char** argv) {
-	// TIME
-		double begin, end;
 
 	// INPUT
 		unsigned int width,heigth,colors, blockDim;
