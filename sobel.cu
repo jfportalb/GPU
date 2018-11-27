@@ -48,8 +48,10 @@ __global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int widt
 		subimage[c+colors*(x*blockDim.x + y)] = image[c+colors*((i)*width+j)];
 		__syncthreads();
 		if (x && x!=blockDim.x && y && y!=blockDim.y){
-			int gx = image[c+colors*((i-1)*width + j-1)] + 2*image[c+colors*((i-1)*width+j)] + image[c+colors*((i-1)*width+j+1)] - image[c+colors*((i+1)*width+j-1)] - 2*image[c+colors*((i+1)*width+j)] - image[c+colors*((i+1)*width+j+1)];
-			int gy = image[c+colors*((i-1)*width+j-1)] + 2*image[c+colors*(i*width+j-1)] + image[c+colors*((i+1)*width+j-1)] - image[c+colors*((i-1)*width+j+1)] - 2*image[c+colors*(i*width+j+1)] - image[c+colors*((i+1)*width+j+1)];
+			int gx = subimage[c+colors*((x-1)*blockDim.x + y-1)] + 2*subimage[c+colors*((x-1)*blockDim.x + y)] + subimage[c+colors*((x-1)*blockDim.x + y+1)]
+					 - subimage[c+colors*((x+1)*blockDim.x + y-1)] - 2*subimage[c+colors*((x+1)*blockDim.x + y)] - subimage[c+colors*((x+1)*blockDim.x + y+1)];
+			int gy = subimage[c+colors*((x-1)*blockDim.x + y-1)] + 2*subimage[c+colors*(x*blockDim.x + y-1)] + subimage[c+colors*((x+1)*blockDim.x + y-1)] 
+				     - subimage[c+colors*((x-1)*blockDim.x + y+1)] - 2*subimage[c+colors*(x*blockDim.x + y+1)] - subimage[c+colors*((x+1)*blockDim.x + y+1)];
 			double g = sqrtf(gx*gx + gy*gy)/4;
 			ret[c+colors*(i*width+j)] = (uint8_t) g;
 		} else {
@@ -114,8 +116,12 @@ void applyMaskPar(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 			CUDA_SAFE_CALL(cudaEventCreate(&stop));
 			CUDA_SAFE_CALL(cudaEventRecord(start));
 			if (shared){
+				if (blockDim < 3){
+					cerr << "Para executar com memória compartilhada é necessário ter pelo menos um bloco de 3x3" << endl;
+					exit(EXIT_FAILURE);
+				}
 				dim3 threadsBlock = {blockDim, blockDim, colors};
-				dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/(blockDim-2), (width + threadsBlock.y - 3)/(blockDim-2), 1};
+				dim3 blocksGrid = {(heigth + threadsBlock.x - 1)/(blockDim-2), (width + threadsBlock.y - 1)/(blockDim-2), 1};
 				int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*colors*sizeof(uint8_t);
 				applyMaskWithSharedMemory<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
 			} else {
