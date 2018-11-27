@@ -40,12 +40,13 @@ __global__ void applyMask(uint8_t *image, uint8_t *ret, int width, int heigth, i
 }
 
 __global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int width, int heigth, int colors) {
-	extern __shared__ uint8_t *subimage;
+	extern __shared__ uint8_t subimagememory[];
+	uint8_t *subimage = subimagememory;
 	int i = (blockDim.x - 2) * blockIdx.x + threadIdx.x,
 		j = (blockDim.y - 2) * blockIdx.y + threadIdx.y,
 		c = threadIdx.z,
-		x = 0,//threadIdx.x,
-		y = 0;//threadIdx.y;
+		x = threadIdx.x,
+		y = threadIdx.y;
 	if (i<heigth && j<width){
 		subimage[c+colors*(x*blockDim.x + y)] = image[c+colors*((i)*width+j)];
 		__syncthreads();
