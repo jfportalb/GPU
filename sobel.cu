@@ -45,7 +45,7 @@ __global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int widt
 		j = (blockDim.y - 2) * blockIdx.y + threadIdx.y,
 		c = threadIdx.z, x = threadIdx.x, y = threadIdx.y;
 	if (i<heigth && j<width){
-		subimage[c+colors*(x*blockDim.x + y)] = image[c+colors*((i)*width+j)];
+		subimage[c+colors*(x*blockDim.x + y)] = 0;//image[c+colors*((i)*width+j)];
 		__syncthreads();
 		if (x && x!=blockDim.x && y && y!=blockDim.y){
 			int gx = subimage[c+colors*((x-1)*blockDim.x + y-1)] + 2*subimage[c+colors*((x-1)*blockDim.x + y)] + subimage[c+colors*((x-1)*blockDim.x + y+1)]
