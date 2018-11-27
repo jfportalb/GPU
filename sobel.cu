@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
 
 	if (argc > 6){
 		blockDim = atol(argv[6]);
-		applyMaskPar(&image, width, heigth, colors, blockDim);
+		applyMaskPar(&image, width, heigth, colors, blockDim, argc>7);
 	} else {
 		applyMaskSeq(&image, width, heigth, colors);
 	}
