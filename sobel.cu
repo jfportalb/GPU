@@ -39,6 +39,51 @@ __global__ void applyMask(uint8_t *image, uint8_t *ret, int width, int heigth, i
 	}
 }
 
+void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, unsigned int blockDim){
+		uint8_t *image = imagePointer[0];
+		double initialParTime, finalParTime;
+		float delta_eventos = 0;
+		cudaEvent_t start, stop;
+		uint8_t *original, *result; //matrizes device
+		// ALLOCATE SPACE AND COPY IMAGE TO DEVICE (CPU → GPU)
+			GET_TIME(begin);
+			// Aloca espaço para as matrizes na GPU
+			CUDA_SAFE_CALL(cudaMalloc((void**) &original, imageBytes));
+			CUDA_SAFE_CALL(cudaMalloc((void**) &result, imageBytes));
+			
+			// Copia as matrizes de entrada da CPU para a GPU (host para device)
+			CUDA_SAFE_CALL(cudaMemcpy(original, image, imageBytes, cudaMemcpyHostToDevice));
+
+			// Invoca o kernel com blocos de tamanhos fixos
+			dim3 threadsBlock = {blockDim, blockDim, colors};
+			dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/threadsBlock.x, (width + threadsBlock.y - 3)/threadsBlock.y, 1};
+			int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*8*2;
+			GET_TIME(end);
+			initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
+
+		// KERNEL RUN
+			CUDA_SAFE_CALL(cudaEventCreate(&start));
+			CUDA_SAFE_CALL(cudaEventCreate(&stop));
+			CUDA_SAFE_CALL(cudaEventRecord(start));
+			applyMask<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
+			CUDA_SAFE_CALL(cudaGetLastError());
+			CUDA_SAFE_CALL(cudaEventRecord(stop));
+			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+			CUDA_SAFE_CALL(cudaEventElapsedTime(&delta_eventos, start, stop));
+
+		// GET RESULT FROM DEVICE (GPU → CPU)
+			GET_TIME(begin);
+			CUDA_SAFE_CALL(cudaMemcpy(image, result, imageBytes, cudaMemcpyDeviceToHost))
+			GET_TIME(end);
+			finalParTime = end-begin; // calcula o tempo das finalizacoes paralelo em segundos
+
+		// FREE MEMORY
+			CUDA_SAFE_CALL(cudaFree(original));
+			CUDA_SAFE_CALL(cudaFree(result));
+
+			printResultsPar(width, heigth, colors, blockDim, delta_eventos, initialParTime, finalParTime);
+}
+
 void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
 	uint8_t *image = imagePointer[0], *ret;
 	long int imageBytes = width*heigth*colors*sizeof(uint8_t);
@@ -47,6 +92,8 @@ void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
+	double tempoSeq;
+	GET_TIME(begin);
 	for (int i = 1; i < heigth -1; ++i) {
 		for (int j = 0; j < width -1; ++j) {
 			for (int c = 0; c < colors; ++c) {
@@ -57,6 +104,9 @@ void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
 			}
 		}
 	}
+	GET_TIME(end);
+	tempoSeq = end-begin;
+	printResultsSeq(width, heigth, colors, tempoSeq);
 	imagePointer[0] = ret;
 	free(image);
 }
@@ -123,56 +173,10 @@ int main(int argc, char** argv) {
 		infile.close();
 
 	if (argc > 6){
-		double initialParTime, finalParTime;
-		float delta_eventos = 0;
-		cudaEvent_t start, stop;
-		uint8_t *original, *result; //matrizes device
-
-		// ALLOCATE SPACE AND COPY IMAGE TO DEVICE (CPU → GPU)
-			blockDim = atol(argv[6]);
-			GET_TIME(begin);
-			// Aloca espaço para as matrizes na GPU
-			CUDA_SAFE_CALL(cudaMalloc((void**) &original, imageBytes));
-			CUDA_SAFE_CALL(cudaMalloc((void**) &result, imageBytes));
-			
-			// Copia as matrizes de entrada da CPU para a GPU (host para device)
-			CUDA_SAFE_CALL(cudaMemcpy(original, image, imageBytes, cudaMemcpyHostToDevice));
-
-			// Invoca o kernel com blocos de tamanhos fixos
-			dim3 threadsBlock = {blockDim, blockDim, colors};
-			dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/threadsBlock.x, (width + threadsBlock.y - 3)/threadsBlock.y, 1};
-			int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*8*2;
-			GET_TIME(end);
-			initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
-
-		// KERNEL RUN
-			CUDA_SAFE_CALL(cudaEventCreate(&start));
-			CUDA_SAFE_CALL(cudaEventCreate(&stop));
-			CUDA_SAFE_CALL(cudaEventRecord(start));
-			applyMask<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
-			CUDA_SAFE_CALL(cudaGetLastError());
-			CUDA_SAFE_CALL(cudaEventRecord(stop));
-			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-			CUDA_SAFE_CALL(cudaEventElapsedTime(&delta_eventos, start, stop));
-
-		// GET RESULT FROM DEVICE (GPU → CPU)
-			GET_TIME(begin);
-			CUDA_SAFE_CALL(cudaMemcpy(image, result, imageBytes, cudaMemcpyDeviceToHost))
-			GET_TIME(end);
-			finalParTime = end-begin; // calcula o tempo das finalizacoes paralelo em segundos
-
-		// FREE MEMORY
-			CUDA_SAFE_CALL(cudaFree(original));
-			CUDA_SAFE_CALL(cudaFree(result));
-
-			printResultsPar(width, heigth, colors, blockDim, delta_eventos, initialParTime, finalParTime);
+		blockDim = atol(argv[6]);
+		applyMaskPar(&image, width, heigth, blockDim);
 	} else {
-		double tempoSeq;
-		GET_TIME(begin);
 		applyMaskSeq(&image, width, heigth, colors);
-		GET_TIME(end);
-		tempoSeq = end-begin;
-		printResultsSeq(width, heigth, colors, tempoSeq);
 	}
 	// SAVE RESULT IN FILE
 		ofstream outfile (outputFileName, ios::binary);
