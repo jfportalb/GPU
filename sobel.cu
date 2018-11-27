@@ -172,7 +172,7 @@ void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
 int main(int argc, char** argv) {
 
 	// INPUT
-		unsigned int width,heigth,colors, blockDim;
+		int width, heigth, colors, blockDim;
 		long int imageBytes; //qtde bytes por matriz
 		uint8_t *image; //matrizes host
 		char *inputFileName, *outputFileName;
