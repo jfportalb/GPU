@@ -39,15 +39,49 @@ __global__ void applyMask(uint8_t *image, uint8_t *ret, int width, int heigth, i
 	}
 }
 
+void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
+	uint8_t *image = imagePointer[0], *ret;
+	long int imageBytes = width*heigth*colors*sizeof(uint8_t);
+	ret = (uint8_t *) malloc(imageBytes);
+	if ( ret == NULL   ) {
+		cerr << "Memoria  insuficiente" << endl;
+		exit(EXIT_FAILURE);
+	}
+	for (int i = 1; i < heigth -1; ++i) {
+		for (int j = 0; j < width -1; ++j) {
+			for (int c = 0; c < colors; ++c) {
+				int gx = image[c+colors*((i-1)*width + j-1)] + 2*image[c+colors*((i-1)*width+j)] + image[c+colors*((i-1)*width+j+1)] - image[c+colors*((i+1)*width+j-1)] - 2*image[c+colors*((i+1)*width+j)] - image[c+colors*((i+1)*width+j+1)];
+				int gy = image[c+colors*((i-1)*width+j-1)] + 2*image[c+colors*(i*width+j-1)] + image[c+colors*((i+1)*width+j-1)] - image[c+colors*((i-1)*width+j+1)] - 2*image[c+colors*(i*width+j+1)] - image[c+colors*((i+1)*width+j+1)];
+				double g = sqrt(gx*gx + gy*gy)/4;
+				ret[c+colors*(i*width+j)] = (uint8_t) g;
+			}
+		}
+	}
+	imagePointer[0] = ret;
+	free(image);
+}
+
 /**
- * Imprime os resultados do programa
+ * Imprime os resultados do programa sequencial
  */
-void printResults(unsigned int width, unsigned int heigth, unsigned int colors, unsigned int blockLines, unsigned int blockColumns, float delta_eventos, double initialParTime, double finalParTime, bool csv = true){
+void printResultsSeq(unsigned int width, unsigned int heigth, unsigned int colors, double tempoSeq, bool csv = true){
 	if (csv) {
-		cout << width << ";" << heigth << ";" << colors << ";" << blockLines << ";" << blockColumns << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << ";" << endl;
+		cout << width << ";" << heigth << ";" << colors << ";" << tempoSeq<< endl;
 	} else {
 		cout << "Dimensões da imagem = " << width << " x " << heigth << " (x"<<colors<<")" << endl
-			 << "Dimensões dos blocos = " << blockLines << " x " << blockColumns << endl
+			 << "Tempo sequencial = "<< tempoSeq << " seg" << endl;
+	}
+}
+
+/**
+ * Imprime os resultados do programa paralelo
+ */
+void printResultsPar(unsigned int width, unsigned int heigth, unsigned int colors, unsigned int blockDim, float delta_eventos, double initialParTime, double finalParTime, bool csv = true){
+	if (csv) {
+		cout << width << ";" << heigth << ";" << colors << ";" << blockDim << ";" << delta_eventos/1000 << ";" << initialParTime << ";" << finalParTime << endl;
+	} else {
+		cout << "Dimensões da imagem = " << width << " x " << heigth << " (x"<<colors<<")" << endl
+			 << "Dimensões dos blocos = " << blockDim << " x " << blockDim << endl
 			 << "Tempo paralelo kernel = "<< delta_eventos/1000 << " seg" << endl
 			 << "Tempo paralelo begin = "<< initialParTime <<" seg" << endl
 			 << "Tempo paralelo end    = "<< finalParTime <<" seg" << endl
@@ -57,27 +91,25 @@ void printResults(unsigned int width, unsigned int heigth, unsigned int colors, 
 
 int main(int argc, char** argv) {
 	// TIME
-		double begin, end, initialParTime, finalParTime;
-		float delta_eventos = 0;
-		cudaEvent_t start, stop;
+		double begin, end;
 
 	// INPUT
-		unsigned int width,heigth,colors, blockLines, blockColumns;
+		unsigned int width,heigth,colors, blockDim;
 		long int imageBytes; //qtde bytes por matriz
 		uint8_t *image; //matrizes host
-		uint8_t *original, *result; //matrizes device
+		char *inputFileName, *outputFileName;
 
 	// GET INPUT
-		if(argc < 5) {
-			cerr << "Digite: "<< argv[0] <<" <largura da imagem> <altura da imagem> <cores na imagem (1 para escala de cinza ou 3 para rgb)> <nº de linhas e colunas dos blocos>" << endl;
+		if(argc < 6) {
+			cerr << "Digite: "<< argv[0] <<" <largura da imagem> <altura da imagem> <cores na imagem (1 para escala de cinza ou 3 para rgb)> <arquivo de entrada> <arquivo de saída> [nº de linhas e colunas dos blocos]" << endl;
 			exit(EXIT_FAILURE);
 		}
 		//dimensao das matrizes e tamanho dos blocos
 		width = atol(argv[1]);
 		heigth = atol(argv[2]);
 		colors = atol(argv[3]);
-		blockLines = atol(argv[4]);
-		blockColumns = atol(argv[4]);
+		inputFileName = argv[4];
+		outputFileName = argv[5];
 
 	// LOAD IMAGE
 		imageBytes = width*heigth*colors*sizeof(uint8_t);
@@ -86,55 +118,68 @@ int main(int argc, char** argv) {
 			cerr << "Memoria  insuficiente" << endl;
 			exit(EXIT_FAILURE);
 		}
-		ifstream infile ("image.bin", ios::binary);
+		ifstream infile (inputFileName, ios::binary);
 		infile.read(reinterpret_cast<char *>(image), imageBytes);
 		infile.close();
 
-	// ALLOCATE SPACE AND COPY IMAGE TO DEVICE (CPU → GPU)
+	if (argc > 6){
+		double initialParTime, finalParTime;
+		float delta_eventos = 0;
+		cudaEvent_t start, stop;
+		uint8_t *original, *result; //matrizes device
+
+		// ALLOCATE SPACE AND COPY IMAGE TO DEVICE (CPU → GPU)
+			blockDim = atol(argv[6]);
+			GET_TIME(begin);
+			// Aloca espaço para as matrizes na GPU
+			CUDA_SAFE_CALL(cudaMalloc((void**) &original, imageBytes));
+			CUDA_SAFE_CALL(cudaMalloc((void**) &result, imageBytes));
+			
+			// Copia as matrizes de entrada da CPU para a GPU (host para device)
+			CUDA_SAFE_CALL(cudaMemcpy(original, image, imageBytes, cudaMemcpyHostToDevice));
+
+			// Invoca o kernel com blocos de tamanhos fixos
+			dim3 threadsBlock = {blockDim, blockDim, colors};
+			dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/threadsBlock.x, (width + threadsBlock.y - 3)/threadsBlock.y, 1};
+			int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*8*2;
+			GET_TIME(end);
+			initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
+
+		// KERNEL RUN
+			CUDA_SAFE_CALL(cudaEventCreate(&start));
+			CUDA_SAFE_CALL(cudaEventCreate(&stop));
+			CUDA_SAFE_CALL(cudaEventRecord(start));
+			applyMask<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
+			CUDA_SAFE_CALL(cudaGetLastError());
+			CUDA_SAFE_CALL(cudaEventRecord(stop));
+			CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+			CUDA_SAFE_CALL(cudaEventElapsedTime(&delta_eventos, start, stop));
+
+		// GET RESULT FROM DEVICE (GPU → CPU)
+			GET_TIME(begin);
+			CUDA_SAFE_CALL(cudaMemcpy(image, result, imageBytes, cudaMemcpyDeviceToHost))
+			GET_TIME(end);
+			finalParTime = end-begin; // calcula o tempo das finalizacoes paralelo em segundos
+
+		// FREE MEMORY
+			CUDA_SAFE_CALL(cudaFree(original));
+			CUDA_SAFE_CALL(cudaFree(result));
+
+			printResultsPar(width, heigth, colors, blockDim, delta_eventos, initialParTime, finalParTime);
+	} else {
+		double tempoSeq;
 		GET_TIME(begin);
-		// Aloca espaço para as matrizes na GPU
-		CUDA_SAFE_CALL(cudaMalloc((void**) &original, imageBytes));
-		CUDA_SAFE_CALL(cudaMalloc((void**) &result, imageBytes));
-		
-		// Copia as matrizes de entrada da CPU para a GPU (host para device)
-		CUDA_SAFE_CALL(cudaMemcpy(original, image, imageBytes, cudaMemcpyHostToDevice));
-
-		// Invoca o kernel com blocos de tamanhos fixos
-		dim3 threadsBlock = {blockLines, blockColumns, colors};
-		dim3 blocksGrid = {(heigth + threadsBlock.x - 3)/threadsBlock.x, (width + threadsBlock.y - 3)/threadsBlock.y, 1};
-		int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*8*2;
+		applyMaskSeq(&image, width, heigth, colors);
 		GET_TIME(end);
-		initialParTime = end-begin; // Calcula o tempo das inicializações paralelo em segundos
-
-	// KERNEL RUN
-		CUDA_SAFE_CALL(cudaEventCreate(&start));
-		CUDA_SAFE_CALL(cudaEventCreate(&stop));
-		CUDA_SAFE_CALL(cudaEventRecord(start));
-		applyMask<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
-		CUDA_SAFE_CALL(cudaGetLastError());
-		CUDA_SAFE_CALL(cudaEventRecord(stop));
-		CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-		CUDA_SAFE_CALL(cudaEventElapsedTime(&delta_eventos, start, stop));
-
-	// GET RESULT FROM DEVICE (GPU → CPU)
-		GET_TIME(begin);
-		CUDA_SAFE_CALL(cudaMemcpy(image, result, imageBytes, cudaMemcpyDeviceToHost))
-		GET_TIME(end);
-		finalParTime = end-begin; // calcula o tempo das finalizacoes paralelo em segundos
-
+		tempoSeq = end-begin;
+		printResultsSeq(width, heigth, colors, tempoSeq);
+	}
 	// SAVE RESULT IN FILE
-		ofstream outfile ("imageOut.bin", ios::binary);
+		ofstream outfile (outputFileName, ios::binary);
 		outfile.write(reinterpret_cast<char *>(image), imageBytes);
 		outfile.close();
 
-	// FREE MEMORY
-		CUDA_SAFE_CALL(cudaFree(original));
-		CUDA_SAFE_CALL(cudaFree(result));
-		free(image);
-
-	// PRINT TIMES
-		printResults(width, heigth, colors, blockLines, blockColumns,
-			delta_eventos, initialParTime, finalParTime);
+	free(image);
 
 	return 0;
 }
