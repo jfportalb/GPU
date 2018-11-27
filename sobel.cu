@@ -118,7 +118,7 @@ void applyMaskPar(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 			CUDA_SAFE_CALL(cudaEventCreate(&stop));
 			CUDA_SAFE_CALL(cudaEventRecord(start));
 			if (shared){
-				int tamMemCompartilhada = threadsBlock.x*threadsBlock.y*8*2;
+				int tamMemCompartilhada = (threadsBlock.x+1)*(threadsBlock.y+1)*colors*sizeof(uint8_t);
 				applyMaskWithSharedMemory<<<blocksGrid, threadsBlock, tamMemCompartilhada>>>(original, result, width, heigth, colors);
 			} else {
 				applyMask<<<blocksGrid, threadsBlock>>>(original, result, width, heigth, colors);
