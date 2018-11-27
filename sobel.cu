@@ -90,7 +90,7 @@ void printResultsPar(unsigned int width, unsigned int heigth, unsigned int color
 	}
 }
 
-void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, int blockDim, bool shared){
+void applyMaskPar(uint8_t **imagePointer, unsigned int width, unsigned int heigth, unsigned int colors, unsigned int blockDim, bool shared){
 		long int imageBytes = width*heigth*colors*sizeof(uint8_t);
 		double begin, end;
 		uint8_t *image = imagePointer[0];
@@ -141,7 +141,7 @@ void applyMaskPar(uint8_t **imagePointer, int width, int heigth, int colors, int
 			printResultsPar(width, heigth, colors, blockDim, delta_eventos, initialParTime, finalParTime);
 }
 
-void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
+void applyMaskSeq(uint8_t **imagePointer, unsigned int width, unsigned int heigth, unsigned int colors){
 	double begin, end;
 	uint8_t *image = imagePointer[0], *ret;
 	long int imageBytes = width*heigth*colors*sizeof(uint8_t);
@@ -172,7 +172,7 @@ void applyMaskSeq(uint8_t **imagePointer, int width, int heigth, int colors){
 int main(int argc, char** argv) {
 
 	// INPUT
-		int width, heigth, colors, blockDim;
+		unsigned int width, heigth, colors, blockDim;
 		long int imageBytes; //qtde bytes por matriz
 		uint8_t *image; //matrizes host
 		char *inputFileName, *outputFileName;
