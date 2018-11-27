@@ -45,15 +45,15 @@ __global__ void applyMaskWithSharedMemory(uint8_t *image, uint8_t *ret, int widt
 	int j = blockDim.y * blockIdx.y + threadIdx.y +1;
 	int c = threadIdx.z;
 	if (i<heigth && j<width){
-		subimage[c+colors*((threadIdx.x+1)*width + threadIdx.y+1)] = image[c+colors*((i)*width+j)];
+		subimage[c+colors*((threadIdx.x+1)*blockDim.x + threadIdx.y+1)] = image[c+colors*((i)*width+j)];
 		if (!threadIdx.x){
-			subimage[c+colors*((threadIdx.x)*width + threadIdx.y+1)] = image[c+colors*((i-1)*width+j)];
+			subimage[c+colors*((threadIdx.x)*blockDim.x + threadIdx.y+1)] = image[c+colors*((i-1)*width+j)];
 			if (!threadIdx.y){
-				subimage[c+colors*((threadIdx.x)*width + threadIdx.y)] = image[c+colors*((i-1)*width+j-1)];
+				subimage[c+colors*((threadIdx.x)*blockDim.x + threadIdx.y)] = image[c+colors*((i-1)*width+j-1)];
 			}
 		}
 		if (!threadIdx.y){
-			subimage[c+colors*((threadIdx.x+1)*width + threadIdx.y)] = image[c+colors*((i)*width+j-1)];
+			subimage[c+colors*((threadIdx.x+1)*blockDim.x + threadIdx.y)] = image[c+colors*((i)*width+j-1)];
 		}
 		int gx = image[c+colors*((i-1)*width + j-1)] + 2*image[c+colors*((i-1)*width+j)] + image[c+colors*((i-1)*width+j+1)] - image[c+colors*((i+1)*width+j-1)] - 2*image[c+colors*((i+1)*width+j)] - image[c+colors*((i+1)*width+j+1)];
 		int gy = image[c+colors*((i-1)*width+j-1)] + 2*image[c+colors*(i*width+j-1)] + image[c+colors*((i+1)*width+j-1)] - image[c+colors*((i-1)*width+j+1)] - 2*image[c+colors*(i*width+j+1)] - image[c+colors*((i+1)*width+j+1)];
