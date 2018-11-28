@@ -151,20 +151,16 @@ void applyMaskPar(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 }
 
 void applyMaskSeq(uint8_t **imagePointer, unsigned int width, unsigned int heigth, unsigned int colors){
-	cout << "OwO-";
 	double begin, end;
 	uint8_t *image = imagePointer[0], *ret;
 	long int imageBytes = width*heigth*colors*sizeof(uint8_t);
-	cout << "OwO-";
 	ret = (uint8_t *) malloc(imageBytes);
 	if ( ret == NULL   ) {
 		cerr << "Memoria  insuficiente" << endl;
 		exit(EXIT_FAILURE);
 	}
-	cout << "OwO-";
 	double tempoSeq;
 	GET_TIME(begin);
-	cout << "OwO-";
 	for (int i = 1; i < heigth -1; ++i) {
 		for (int j = 0; j < width -1; ++j) {
 			for (int c = 0; c < colors; ++c) {
@@ -175,10 +171,8 @@ void applyMaskSeq(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 			}
 		}
 	}
-	cout << "OwO-";
 	GET_TIME(end);
 	tempoSeq = end-begin;
-	cout << "OwO-";
 	printResultsSeq(width, heigth, colors, tempoSeq);
 	imagePointer[0] = ret;
 	free(image);
@@ -216,9 +210,13 @@ int main(int argc, char** argv) {
 		infile.close();
 
 	if (argc > 6){
+			cout << "TT-";
+
 		blockDim = atol(argv[6]);
 		applyMaskPar(&image, width, heigth, colors, blockDim, argc>7);
 	} else {
+			cout << "OwO-";
+
 		applyMaskSeq(&image, width, heigth, colors);
 	}
 	// SAVE RESULT IN FILE
