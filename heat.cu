@@ -109,7 +109,7 @@ int  main(int argc, char** argv) {
 	print(A, n);
 	GET_TIME(begin);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
-	CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+	CUDA_SAFE_CALL(cudaMemcpy(Adevice, A, matBytes, cudaMemcpyHostToDevice));
 	GET_TIME(end);
 	timeCpuGpu = end-begin;
 	
