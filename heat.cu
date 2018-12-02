@@ -2,8 +2,6 @@
 #include <sys/time.h>
 #include <iostream>
 #include <fstream>
-
-#include <iomanip>
 using namespace std;
 
 #define ALPHA 19e-5
@@ -71,6 +69,8 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 	for(int i=0; i<rounds; i++){
 		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n, deltaT);
 		CUDA_SAFE_CALL(cudaGetLastError());
+		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
 		aux = Adevice;
 		Adevice = Atemp;
 		Atemp = aux;
@@ -93,9 +93,6 @@ void printResults(int n, double timeCpuGpu, double timeRunPar, double timeGpuCpu
 }
 
 int  main(int argc, char** argv) {
-	
-	std::cout << std::fixed;
-	std::cout << std::setprecision(2);
 	int n=0, blockSize;
 	double *A, *Adevice;
 	double begin, end, timeCpuGpu, timeRunPar, timeGpuCpu;	
@@ -131,7 +128,7 @@ int  main(int argc, char** argv) {
 	CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
 	GET_TIME(end);
 	timeGpuCpu = end-begin;
-	print(A, n);
+	// print(A, n);
 	
 	CUDA_SAFE_CALL(cudaFree(Adevice));
 	free(A);
