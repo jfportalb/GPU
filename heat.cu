@@ -70,8 +70,8 @@ void print(double *A, int n){
 void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int deltaT) {
 
 	double *Atemp, *aux, *Adevice = AdevicePointer[0], *A;
-	A = (double *) malloc(matBytes);
 	size_t matBytes = n*n*sizeof(double);
+	A = (double *) malloc(matBytes);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Atemp, matBytes));
 	
 	int nBlocks = (n + blockSize -1) / blockSize;
