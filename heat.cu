@@ -91,6 +91,9 @@ void printResults(int n, double timeCpuGpu, double timeRunPar, double timeGpuCpu
 }
 
 int  main(int argc, char** argv) {
+	
+	std::cout << std::f
+	std::cout << std::setprecision(2);ixed;
 	int n=0, blockSize;
 	double *A, *Adevice;
 	double begin, end, timeCpuGpu, timeRunPar, timeGpuCpu;	
