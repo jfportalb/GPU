@@ -52,15 +52,16 @@ __global__ void updateHeat(double *last, double *next , int n) {
 		next[pos] = last[pos];
 	} else if (i < n && j < n){
 		next[pos] = last[pos] + 
-			(ALPHA*DELTA_T/(DISTANCE*DIS))*(last[pos-1]+last[pos+1]+last[pos-n]+last[pos+n]-4*last[pos]);	
+			(ALPHA*DELTA_T/(DISTANCE*DISTANCE))*(last[pos-1]+last[pos+1]+last[pos-n]+last[pos+n]-4*last[pos]);	
 	}
 }
 
 void playRounds(double *Adevice, int n, int blockSize) {
 	double *Atemp, *aux;
+	size_t matBytes = n*n*sizeof(double);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Atemp, matBytes));
 	
-	nBlocks = (n + blockSize -1) / blockSize;
+	int nBlocks = (n + blockSize -1) / blockSize;
 	dim3  gBlocks(nBlocks, nBlocks);
 	dim3 nThreads(blockSize,blockSize);
 	
@@ -69,7 +70,7 @@ void playRounds(double *Adevice, int n, int blockSize) {
 		CUDA_SAFE_CALL(cudaGetLastError());
 		aux = Adevice;
 		Adevice = Atemp;
-		Atemp = Adevice;
+		Atemp = aux;
 	}
 	CUDA_SAFE_CALL(cudaFree(Atemp));
 }
@@ -90,8 +91,8 @@ void printResults(int n, double timeCpuGpu, double timeRunPar, double timeGpuCpu
 int  main(int argc, char** argv) {
 	int n=0, blockSize;
 	double *A, *Adevice;
-	double begin, end, timeSeq, timeCpuGpu, timeRunPar, timeGpuCpu;	
-	if(argc < 3) {
+	double begin, end, timeCpuGpu, timeRunPar, timeGpuCpu;	
+	if(argc < 2) {
 		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
 		exit(EXIT_FAILURE);
 	}
