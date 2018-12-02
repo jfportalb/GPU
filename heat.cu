@@ -116,7 +116,7 @@ int  main(int argc, char** argv) {
 	timeCpuGpu = end-begin;
 	
 	GET_TIME(begin);
-	playRounds(Adevice, n, blockSize, rounds);
+	playRounds(&Adevice, n, blockSize, rounds);
 	GET_TIME(end);
 	timeRunPar = end-begin;
 	
