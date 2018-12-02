@@ -57,14 +57,16 @@ __global__ void updateHeat(double *last, double *next , int n, int deltaT) {
 }
 
 void print(double *A, int n){	
-	cout << "#############################################################";
+	cout << "#############################################################" << endl;
 	for (int i=0; i<n; i++){
 		for (int j=0; j<n; j++){
 			cout << A[i*n+j] << "  ";
 		}
 		cout << endl;
 	}
+	cout << "#############################################################" << endl;
 }
+
 void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int deltaT) {
 
 	double *Atemp, *aux, *Adevice = AdevicePointer[0], *A;
