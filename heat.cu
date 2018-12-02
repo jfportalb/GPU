@@ -56,7 +56,7 @@ __global__ void updateHeat(double *last, double *next , int n) {
 	}
 }
 
-void playRounds(double *Adevice, int n, int blockSize) {
+void playRounds(double *Adevice, int n, int blockSize, int rounds) {
 	double *Atemp, *aux;
 	size_t matBytes = n*n*sizeof(double);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Atemp, matBytes));
@@ -65,7 +65,7 @@ void playRounds(double *Adevice, int n, int blockSize) {
 	dim3  gBlocks(nBlocks, nBlocks);
 	dim3 nThreads(blockSize,blockSize);
 	
-	for(int i=0; i<ROUNDS; i++){
+	for(int i=0; i<rounds; i++){
 		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n);
 		CUDA_SAFE_CALL(cudaGetLastError());
 		aux = Adevice;
@@ -98,7 +98,7 @@ int  main(int argc, char** argv) {
 	}
 	n = atol(argv[1]);
 	blockSize = atol(argv[2]);
-	
+	int rounds = atol(argv[3]);
 	size_t matBytes = n*n*sizeof(double);
 	A = (double *) malloc(matBytes);
 	if ( A == NULL   ) {
@@ -114,7 +114,7 @@ int  main(int argc, char** argv) {
 	timeCpuGpu = end-begin;
 	
 	GET_TIME(begin);
-	playRounds(Adevice, n, blockSize);
+	playRounds(Adevice, n, blockSize, rounds);
 	GET_TIME(end);
 	timeRunPar = end-begin;
 	
