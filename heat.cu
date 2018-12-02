@@ -44,7 +44,7 @@ void setupMatrix(double *A, int n){
 	}
 }
 
-__global__ void updateHeat(double *last, double *next , int n) {
+__global__ void updateHeat(double *last, double *next , int n, int deltaT) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	int pos = i*n + j;
@@ -52,11 +52,11 @@ __global__ void updateHeat(double *last, double *next , int n) {
 		next[pos] = last[pos];
 	} else if (i < n && j < n){
 		next[pos] = last[pos] + 
-			(ALPHA*DELTA_T/(DISTANCE*DISTANCE))*(last[pos-1]+last[pos+1]+last[pos-n]+last[pos+n]-4*last[pos]);	
+			(ALPHA*deltaT/(DISTANCE*DISTANCE))*(last[pos-1]+last[pos+1]+last[pos-n]+last[pos+n]-4*last[pos]);	
 	}
 }
 
-void playRounds(double **AdevicePointer, int n, int blockSize, int rounds) {
+void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int deltaT) {
 
 	double *Atemp, *aux, *Adevice = AdevicePointer[0];
 	size_t matBytes = n*n*sizeof(double);
@@ -67,7 +67,7 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds) {
 	dim3 nThreads(blockSize,blockSize);
 	
 	for(int i=0; i<rounds; i++){
-		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n);
+		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n, deltaT);
 		CUDA_SAFE_CALL(cudaGetLastError());
 		aux = Adevice;
 		Adevice = Atemp;
@@ -94,13 +94,15 @@ int  main(int argc, char** argv) {
 	int n=0, blockSize;
 	double *A, *Adevice;
 	double begin, end, timeCpuGpu, timeRunPar, timeGpuCpu;	
-	if(argc < 2) {
-		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco>" << endl;
+	if(argc < 4) {
+		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco> <Tempo total> <Delta T>" << endl;
 		exit(EXIT_FAILURE);
 	}
 	n = atol(argv[1]);
 	blockSize = atol(argv[2]);
-	int rounds = atol(argv[3]);
+	int deltaT = atol(argv[4]);
+	int rounds = atol(argv[3])/deltaT;
+
 	size_t matBytes = n*n*sizeof(double);
 	A = (double *) malloc(matBytes);
 	if ( A == NULL   ) {
@@ -116,7 +118,7 @@ int  main(int argc, char** argv) {
 	timeCpuGpu = end-begin;
 	
 	GET_TIME(begin);
-	playRounds(&Adevice, n, blockSize, rounds);
+	playRounds(&Adevice, n, blockSize, rounds, deltaT);
 	GET_TIME(end);
 	timeRunPar = end-begin;
 	
