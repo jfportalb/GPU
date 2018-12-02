@@ -56,8 +56,9 @@ __global__ void updateHeat(double *last, double *next , int n) {
 	}
 }
 
-void playRounds(double *Adevice, int n, int blockSize, int rounds) {
-	double *Atemp, *aux;
+void playRounds(double **AdevicePointer, int n, int blockSize, int rounds) {
+
+	double *Atemp, *aux, *Adevice = AdevicePointer[0];
 	size_t matBytes = n*n*sizeof(double);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Atemp, matBytes));
 	
@@ -73,6 +74,7 @@ void playRounds(double *Adevice, int n, int blockSize, int rounds) {
 		Atemp = aux;
 	}
 	CUDA_SAFE_CALL(cudaFree(Atemp));
+	AdevicePointer[0] =Adevice;
 }
 
 void print(double *A, int n){	
