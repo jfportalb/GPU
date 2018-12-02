@@ -70,6 +70,7 @@ void print(double *A, int n){
 void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int deltaT) {
 
 	double *Atemp, *aux, *Adevice = AdevicePointer[0], *A;
+	A = (double *) malloc(matBytes);
 	size_t matBytes = n*n*sizeof(double);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Atemp, matBytes));
 	
@@ -80,8 +81,8 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 	for(int i=0; i<rounds; i++){
 		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n, deltaT);
 		CUDA_SAFE_CALL(cudaGetLastError());
-		// CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
-		// print(A, n);
+		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
 		aux = Adevice;
 		Adevice = Atemp;
 		Atemp = aux;
