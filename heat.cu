@@ -106,7 +106,7 @@ int  main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 	setupMatrix(A, n);
-	
+	print(A, n);
 	GET_TIME(begin);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
 	CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
@@ -122,6 +122,7 @@ int  main(int argc, char** argv) {
 	CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
 	GET_TIME(end);
 	timeGpuCpu = end-begin;
+	print(A, n);
 	
 	CUDA_SAFE_CALL(cudaFree(Adevice));
 	free(A);
