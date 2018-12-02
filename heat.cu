@@ -6,7 +6,7 @@ using namespace std;
 
 #define ALPHA 19e-5
 #define DELTA_T 120
-#define ROUNDS 1000*3*60*60/DELTA_T
+#define ROUNDS 3*60*60/DELTA_T
 #define DISTANCE 0.1
 
 /**
