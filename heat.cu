@@ -56,9 +56,18 @@ __global__ void updateHeat(double *last, double *next , int n, int deltaT) {
 	}
 }
 
+void print(double *A, int n){	
+	cout << "#############################################################";
+	for (int i=0; i<n; i++){
+		for (int j=0; j<n; j++){
+			cout << A[i*n+j] << "  ";
+		}
+		cout << endl;
+	}
+}
 void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int deltaT) {
 
-	double *Atemp, *aux, *Adevice = AdevicePointer[0];
+	double *Atemp, *aux, *Adevice = AdevicePointer[0], *A;
 	size_t matBytes = n*n*sizeof(double);
 	CUDA_SAFE_CALL(cudaMalloc((void**) &Atemp, matBytes));
 	
@@ -79,14 +88,6 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 	AdevicePointer[0] =Adevice;
 }
 
-void print(double *A, int n){	
-	for (int i=0; i<n; i++){
-		for (int j=0; j<n; j++){
-			cout << A[i*n+j] << "  ";
-		}
-		cout << endl;
-	}
-}
 
 void printResults(int n, double timeCpuGpu, double timeRunPar, double timeGpuCpu){
 	cout << n << ";" << timeCpuGpu << ";" << timeRunPar << ";" << timeGpuCpu << endl;
