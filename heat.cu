@@ -91,7 +91,7 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 	AdevicePointer[0] =Adevice;
 }
 
-void playRoundSeq(double **APointer, int n, int rounds, int deltaT) {
+void playRoundsSeq(double **APointer, int n, int rounds, int deltaT) {
 	double *A = APointer[0], *Temp, *aux;
 	for(int r=0; r<rounds; r++){
 		for (int i = 0; i < n; ++i) {
