@@ -155,7 +155,9 @@ int  main(int argc, char** argv) {
 	}
 	setupMatrix(A, n);
 	print(A, n);
+		cout << "OwO" << endl;
 	if (argc > 3){
+		cout << "TT" << endl;
 		blockSize = atol(argv[4]);
 		GET_TIME(begin);
 		CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
