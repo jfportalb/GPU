@@ -139,7 +139,7 @@ int  main(int argc, char** argv) {
 	int n=0, blockSize;
 	double *A, *Adevice;
 	double begin, end, timeCpuGpu = 0, timeRun = 0, timeGpuCpu = 0;	
-	if(argc < 3) {
+	if(argc < 4) {
 		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Tempo total> <Delta T> [Dimensão do bloco]" << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -156,7 +156,7 @@ int  main(int argc, char** argv) {
 	setupMatrix(A, n);
 	print(A, n);
 		cout << "OwO" << endl;
-	if (argc > 3){
+	if (argc > 4){
 		cout << "TT" << endl;
 		blockSize = atol(argv[4]);
 		GET_TIME(begin);
