@@ -92,35 +92,23 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 }
 
 void playRoundsSeq(double **APointer, int n, int rounds, int deltaT) {
-		cout << "OwO" << endl;
 	double *A = APointer[0], *Temp, *aux;
-		cout << "OwO" << endl;
 	size_t matBytes = n*n*sizeof(double);
-		cout << "OwO" << endl;
 	Temp = (double *) malloc(matBytes);
-		cout << "OwO" << endl;
 	for(int r=0; r<rounds; r++){
-		cout << "OwO" << endl;
 		for (int i = 0; i < n; ++i) {
-		cout << "OwO" << endl;
 			Temp[i*n] = A[i*n];
-		cout << "OwO" << endl;
 			for (int j = 1; j < n-1; ++j)	{
-		cout << "OwO" << endl;
 				int pos = i*n + j;
-		cout << "OwO" << endl;
 				if (i==0 || i==n-1){
 					Temp[pos] = A[pos];
 				} else if (i < n && j < n){
 					Temp[pos] = A[pos] + 
 						(ALPHA*deltaT/(DISTANCE*DISTANCE))*(A[pos-1]+A[pos+1]+A[pos-n]+A[pos+n]-4*A[pos]);	
 				}
-		cout << "OwO" << endl;
 			}
-		cout << "OwO" << endl;
 			Temp[(i+1)*n-1] = A[(i+1)*n-1];
 		}
-		cout << "OwO" << endl;
 		aux = A;
 		A = Temp;
 		Temp = aux;
@@ -155,9 +143,7 @@ int  main(int argc, char** argv) {
 	}
 	setupMatrix(A, n);
 	print(A, n);
-		cout << "OwO" << endl;
 	if (argc > 4){
-		cout << "TT" << endl;
 		blockSize = atol(argv[4]);
 		GET_TIME(begin);
 		CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
@@ -178,9 +164,7 @@ int  main(int argc, char** argv) {
 		
 		CUDA_SAFE_CALL(cudaFree(Adevice));
 	} else {
-		cout << "OwO" << endl;
 		GET_TIME(begin);
-		cout << "OwO" << endl;
 		playRoundsSeq(&A, n, rounds, deltaT);
 		GET_TIME(end);
 		timeRun = end-begin;
