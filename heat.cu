@@ -81,7 +81,12 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 	for(int i=0; i<rounds; i++){
 		cout << "============================================================" << endl;
 		cout << "============================================================" << endl;
+		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
+		CUDA_SAFE_CALL(cudaMemcpy(A, Atemp, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
 		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n, deltaT);
+		cout << "||||||||||||||||||||||||||||||||||||||||||||||||" << endl;
 		CUDA_SAFE_CALL(cudaGetLastError());
 		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
 		print(A, n);
@@ -90,7 +95,10 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 		aux = Adevice;
 		Adevice = Atemp;
 		Atemp = aux;
+		cout << "||||||||||||||||||||||||||||||||||||||||||||||||" << endl;
 		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
+		CUDA_SAFE_CALL(cudaMemcpy(A, Atemp, matBytes, cudaMemcpyDeviceToHost));
 		print(A, n);
 	}
 	CUDA_SAFE_CALL(cudaFree(Atemp));
