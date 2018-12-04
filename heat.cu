@@ -79,8 +79,14 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 	dim3 nThreads(blockSize,blockSize);
 	
 	for(int i=0; i<rounds; i++){
+		cout << "============================================================" << endl;
+		cout << "============================================================" << endl;
 		updateHeat <<< gBlocks, nThreads >>>(Adevice, Atemp, n, deltaT);
 		CUDA_SAFE_CALL(cudaGetLastError());
+		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
+		CUDA_SAFE_CALL(cudaMemcpy(A, ATemp, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
 		aux = Adevice;
 		Adevice = Atemp;
 		Atemp = aux;
