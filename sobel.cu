@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 		blockDim = atol(argv[6]);
 		applyMaskPar(&image, width, heigth, colors, blockDim, argc>7);
 	} else {
-			cout << "\o/\o/\o/-";
+			cout << "\\o/\\o/\\o/-";
 
 		applyMaskSeq(&image, width, heigth, colors);
 	}
