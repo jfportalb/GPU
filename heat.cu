@@ -91,6 +91,31 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 	AdevicePointer[0] =Adevice;
 }
 
+void playRoundSeq(double **APointer, int n, int rounds, int deltaT) {
+	double *A = APointer[0], *Temp, *aux;
+	for(int r=0; r<rounds; r++){
+		for (int i = 0; i < n; ++i) {
+			Temp[i*n] = A[i*n];
+			for (int j = 1; j < n-1; ++j)	{
+				int pos = i*n + j;
+				if (i==0 || i==n-1){
+					Temp[pos] = A[pos];
+				} else if (i < n && j < n){
+					Temp[pos] = A[pos] + 
+						(ALPHA*deltaT/(DISTANCE*DISTANCE))*(A[pos-1]+A[pos+1]+A[pos-n]+A[pos+n]-4*A[pos]);	
+				}
+			}
+			Temp[(i+1)*n-1] = A[(i+1)*n-1];
+		}
+		aux = A;
+		A = Temp;
+		Temp = aux;
+		print(A, n);
+	}
+	free(Temp);
+	APointer[0] = A;
+}
+
 
 void printResults(int n, double timeCpuGpu, double timeRunPar, double timeGpuCpu){
 	cout << n << ";" << timeCpuGpu << ";" << timeRunPar << ";" << timeGpuCpu << endl;
@@ -99,15 +124,14 @@ void printResults(int n, double timeCpuGpu, double timeRunPar, double timeGpuCpu
 int  main(int argc, char** argv) {
 	int n=0, blockSize;
 	double *A, *Adevice;
-	double begin, end, timeCpuGpu, timeRunPar, timeGpuCpu;	
-	if(argc < 4) {
-		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Dimensão do bloco> <Tempo total> <Delta T>" << endl;
+	double begin, end, timeCpuGpu = 0, timeRun = 0, timeGpuCpu = 0;	
+	if(argc < 3) {
+		cerr << "Digite: "<< argv[0] <<" <Dimensão da matriz> <Tempo total> <Delta T> [Dimensão do bloco]" << endl;
 		exit(EXIT_FAILURE);
 	}
 	n = atol(argv[1]);
-	blockSize = atol(argv[2]);
-	int deltaT = atol(argv[4]);
-	int rounds = atol(argv[3])/deltaT;
+	int deltaT = atol(argv[3]);
+	int rounds = atol(argv[2])/deltaT;
 
 	size_t matBytes = n*n*sizeof(double);
 	A = (double *) malloc(matBytes);
@@ -117,28 +141,34 @@ int  main(int argc, char** argv) {
 	}
 	setupMatrix(A, n);
 	print(A, n);
-	GET_TIME(begin);
-	CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
-	CUDA_SAFE_CALL(cudaMemcpy(Adevice, A, matBytes, cudaMemcpyHostToDevice));
-	GET_TIME(end);
-	timeCpuGpu = end-begin;
-	
-	GET_TIME(begin);
-	playRounds(&Adevice, n, blockSize, rounds, deltaT);
-	GET_TIME(end);
-	timeRunPar = end-begin;
-	
-	GET_TIME(begin);
-	CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
-	GET_TIME(end);
-	timeGpuCpu = end-begin;
-	// print(A, n);
-	
-	CUDA_SAFE_CALL(cudaFree(Adevice));
+	if (argc > 3){
+		blockSize = atol(argv[4]);
+		GET_TIME(begin);
+		CUDA_SAFE_CALL(cudaMalloc((void**) &Adevice, matBytes));
+		CUDA_SAFE_CALL(cudaMemcpy(Adevice, A, matBytes, cudaMemcpyHostToDevice));
+		GET_TIME(end);
+		timeCpuGpu = end-begin;
+		
+		GET_TIME(begin);
+		playRounds(&Adevice, n, blockSize, rounds, deltaT);
+		GET_TIME(end);
+		timeRun = end-begin;
+		
+		GET_TIME(begin);
+		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
+		GET_TIME(end);
+		timeGpuCpu = end-begin;
+		// print(A, n);
+		
+		CUDA_SAFE_CALL(cudaFree(Adevice));
+	} else {
+		GET_TIME(begin);
+		playRoundsSeq(&A, n, rounds, deltaT);
+		GET_TIME(end);
+		timeRun = end-begin;
+	}
+	printResults(n, timeCpuGpu, timeRun, timeGpuCpu);
 	free(A);
-	
-	printResults(n, timeCpuGpu, timeRunPar, timeGpuCpu);
-	
 	CUDA_SAFE_CALL(cudaDeviceReset());
 	exit(EXIT_SUCCESS);
 }
