@@ -85,7 +85,7 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 		CUDA_SAFE_CALL(cudaGetLastError());
 		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
 		print(A, n);
-		CUDA_SAFE_CALL(cudaMemcpy(A, ATemp, matBytes, cudaMemcpyDeviceToHost));
+		CUDA_SAFE_CALL(cudaMemcpy(A, Atemp, matBytes, cudaMemcpyDeviceToHost));
 		print(A, n);
 		aux = Adevice;
 		Adevice = Atemp;
