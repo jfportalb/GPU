@@ -92,13 +92,18 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 		print(A, n);
 		CUDA_SAFE_CALL(cudaMemcpy(A, Atemp, matBytes, cudaMemcpyDeviceToHost));
 		print(A, n);
-		aux = Adevice;
-		Adevice = Atemp;
-		Atemp = aux;
-		cout << "||||||||||||||||||||||||||||||||||||||||||||||||" << endl;
+		cout << "============================================================" << endl;
+		cout << "============================================================" << endl;
+		CUDA_SAFE_CALL(cudaMemcpy(A, Atemp, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
 		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
 		print(A, n);
+		updateHeat <<< gBlocks, nThreads >>>(Atemp, Adevice, n, deltaT);
+		cout << "||||||||||||||||||||||||||||||||||||||||||||||||" << endl;
+		CUDA_SAFE_CALL(cudaGetLastError());
 		CUDA_SAFE_CALL(cudaMemcpy(A, Atemp, matBytes, cudaMemcpyDeviceToHost));
+		print(A, n);
+		CUDA_SAFE_CALL(cudaMemcpy(A, Adevice, matBytes, cudaMemcpyDeviceToHost));
 		print(A, n);
 	}
 	CUDA_SAFE_CALL(cudaFree(Atemp));
