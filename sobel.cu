@@ -191,23 +191,35 @@ int main(int argc, char** argv) {
 			cerr << "Digite: "<< argv[0] <<" <largura da imagem> <altura da imagem> <cores na imagem (1 para escala de cinza ou 3 para rgb)> <arquivo de entrada> <arquivo de saída> [nº de linhas e colunas dos blocos]" << endl;
 			exit(EXIT_FAILURE);
 		}
+			cout << "OwO-";
 		//dimensao das matrizes e tamanho dos blocos
 		width = atol(argv[1]);
+			cout << "OwO-";
 		heigth = atol(argv[2]);
+			cout << "OwO-";
 		colors = atol(argv[3]);
+			cout << "OwO-";
 		inputFileName = argv[4];
+			cout << "OwO-";
 		outputFileName = argv[5];
+			cout << "OwO-";
 
 	// LOAD IMAGE
 		imageBytes = width*heigth*colors*sizeof(uint8_t);
+			cout << "OwO-";
 		image = (uint8_t *) malloc(imageBytes);
+			cout << "OwO-";
 		if ( image == NULL   ) {
 			cerr << "Memoria  insuficiente" << endl;
 			exit(EXIT_FAILURE);
 		}
+			cout << "OwO-";
 		ifstream infile (inputFileName, ios::binary);
+			cout << "OwO-";
 		infile.read(reinterpret_cast<char *>(image), imageBytes);
+			cout << "OwO-";
 		infile.close();
+			cout << "OwO-";
 
 	if (argc > 6){
 			cout << "TT-";
@@ -215,7 +227,7 @@ int main(int argc, char** argv) {
 		blockDim = atol(argv[6]);
 		applyMaskPar(&image, width, heigth, colors, blockDim, argc>7);
 	} else {
-			cout << "OwO-";
+			cout << "\o/\o/\o/-";
 
 		applyMaskSeq(&image, width, heigth, colors);
 	}
