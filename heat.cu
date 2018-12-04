@@ -93,6 +93,8 @@ void playRounds(double **AdevicePointer, int n, int blockSize, int rounds, int d
 
 void playRoundsSeq(double **APointer, int n, int rounds, int deltaT) {
 	double *A = APointer[0], *Temp, *aux;
+	size_t matBytes = n*n*sizeof(double);
+	Temp = (double *) malloc(matBytes);
 	for(int r=0; r<rounds; r++){
 		for (int i = 0; i < n; ++i) {
 			Temp[i*n] = A[i*n];
