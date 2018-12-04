@@ -181,12 +181,14 @@ void applyMaskSeq(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 int main(int argc, char** argv) {
 
 	// INPUT
+			cout << "OwO-";
 		unsigned int width, heigth, colors, blockDim;
 		long int imageBytes; //qtde bytes por matriz
 		uint8_t *image; //matrizes host
 		char *inputFileName, *outputFileName;
 
 	// GET INPUT
+			cout << "OwO-";
 		if(argc < 6) {
 			cerr << "Digite: "<< argv[0] <<" <largura da imagem> <altura da imagem> <cores na imagem (1 para escala de cinza ou 3 para rgb)> <arquivo de entrada> <arquivo de saída> [nº de linhas e colunas dos blocos]" << endl;
 			exit(EXIT_FAILURE);
