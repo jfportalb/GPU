@@ -181,47 +181,47 @@ void applyMaskSeq(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 int main(int argc, char** argv) {
 
 	// INPUT
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		unsigned int width, heigth, colors, blockDim;
 		long int imageBytes; //qtde bytes por matriz
 		uint8_t *image; //matrizes host
 		char *inputFileName, *outputFileName;
 
 	// GET INPUT
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		if(argc < 6) {
 			cerr << "Digite: "<< argv[0] <<" <largura da imagem> <altura da imagem> <cores na imagem (1 para escala de cinza ou 3 para rgb)> <arquivo de entrada> <arquivo de saída> [nº de linhas e colunas dos blocos]" << endl;
 			exit(EXIT_FAILURE);
 		}
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		//dimensao das matrizes e tamanho dos blocos
 		width = atol(argv[1]);
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		heigth = atol(argv[2]);
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		colors = atol(argv[3]);
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		inputFileName = argv[4];
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		outputFileName = argv[5];
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 
 	// LOAD IMAGE
 		imageBytes = width*heigth*colors*sizeof(uint8_t);
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		image = (uint8_t *) malloc(imageBytes);
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		if ( image == NULL   ) {
 			cerr << "Memoria  insuficiente" << endl;
 			exit(EXIT_FAILURE);
 		}
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		ifstream infile (inputFileName, ios::binary);
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		infile.read(reinterpret_cast<char *>(image), imageBytes);
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 		infile.close();
-			cout << "OwO-";
+			cout << "OwO-" << endl;
 
 	if (argc > 6){
 			cout << "TT-";
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 		blockDim = atol(argv[6]);
 		applyMaskPar(&image, width, heigth, colors, blockDim, argc>7);
 	} else {
-			cout << "\\o/\\o/\\o/-";
+			cout << "\\o/\\o/\\o/-" << endl;
 
 		applyMaskSeq(&image, width, heigth, colors);
 	}
