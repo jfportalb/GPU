@@ -162,7 +162,7 @@ void applyMaskSeq(uint8_t **imagePointer, unsigned int width, unsigned int heigt
 	double tempoSeq;
 	GET_TIME(begin);
 	for (int i = 1; i < heigth -1; ++i) {
-		for (int j = 0; j < width -1; ++j) {
+		for (int j = 1; j < width -1; ++j) {
 			for (int c = 0; c < colors; ++c) {
 				int gx = image[c+colors*((i-1)*width + j-1)] + 2*image[c+colors*((i-1)*width+j)] + image[c+colors*((i-1)*width+j+1)] - image[c+colors*((i+1)*width+j-1)] - 2*image[c+colors*((i+1)*width+j)] - image[c+colors*((i+1)*width+j+1)];
 				int gy = image[c+colors*((i-1)*width+j-1)] + 2*image[c+colors*(i*width+j-1)] + image[c+colors*((i+1)*width+j-1)] - image[c+colors*((i-1)*width+j+1)] - 2*image[c+colors*(i*width+j+1)] - image[c+colors*((i+1)*width+j+1)];
