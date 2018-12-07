@@ -165,15 +165,18 @@ int  main(int argc, char** argv) {
 
 		if (argc > 4){
 			if (argv[4][0] == 'e'){
+				cout << "PIVOTEAMENTO ESCALONADO" << endl;
 				GET_TIME(begin);
 				luGPUPivotEscal(Adevice, n, blockSize);
 				GET_TIME(end);
 			}else{
+				cout << "PIVOTEAMENTO BÁSICO" << endl;
 				GET_TIME(begin);
 				luGPUPivot(Adevice, n, blockSize);
 				GET_TIME(end);
 			}
 		} else {
+			cout << "PARALELO" << endl;
 			GET_TIME(begin);
 			luGPU(Adevice, n, blockSize);
 			GET_TIME(end);
@@ -188,6 +191,7 @@ int  main(int argc, char** argv) {
 		CUDA_SAFE_CALL(cudaFree(Adevice));
 		free(Apar);
 	} else {
+		cout << "SEQUENCIAL" << endl;
 		GET_TIME(begin);
 		luSeq(Aseq, n);
 		GET_TIME(end);
