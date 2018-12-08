@@ -140,7 +140,6 @@ int  main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 	setupMatrix(A, n);
-	print(A, n);
 	if (argc > 4){
 		blockSize = atol(argv[4]);
 		GET_TIME(begin);
