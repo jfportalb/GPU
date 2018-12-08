@@ -110,7 +110,6 @@ void playRoundsSeq(double **APointer, int n, int rounds, int deltaT) {
 		aux = A;
 		A = Temp;
 		Temp = aux;
-		print(A, n);
 	}
 	free(Temp);
 	APointer[0] = A;
